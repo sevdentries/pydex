@@ -6,6 +6,16 @@ import time
 from tkinter import *
 from tkinter import ttk
 reader = ""
+toggle = 1
+
+def optionhide(event):
+    global toggle
+    if toggle == 1:
+        optionlist.pack_forget()
+        toggle = 0
+    elif toggle == 0:
+        optionlist.pack()
+        toggle = 1
 
 def doubleselect(event):
     global reader
@@ -24,6 +34,7 @@ def optionselect(event):
         print(str(selectopt)+" option selected!")
     except IndexError:
         print("Global option selected!")
+    optionhide(event)
 
 
 
@@ -46,10 +57,10 @@ filelist = Listbox(root, yscrollcommand=filebar.set)
 filelist.bind("<Double-Button-1>",doubleselect)
 filelist.bind("<Button-3>",optionselect)
 optionlist = Listbox(root)
-optionlist.place_forget()
 #TKINTER ELEMENT PROCESSES
 filelist.bind("<Double-Button-1>",doubleselect)
 filelist.bind("<Button-3>",optionselect)
+root.bind("<Button-1>",optionhide)
 #FUNCTIONS BELOW
 def exitcatcher(): #A KILL CATCH DESIGNED TO CLOSE ALL WORKING THREADS BEFORE EXITING
     print("killcatch triggered!")
