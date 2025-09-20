@@ -8,7 +8,7 @@ from tkinter import ttk
 reader = ""
 toggle = 1
 
-def optionhide(event):
+def optiontoggle(event):
     global toggle
     if toggle == 1:
         optionlist.pack_forget()
@@ -16,6 +16,11 @@ def optionhide(event):
     elif toggle == 0:
         optionlist.pack()
         toggle = 1
+
+def optionhide(event):
+    global toggle
+    optionlist.pack_forget()
+    toggle = 0
 
 def doubleselect(event):
     global reader
@@ -34,7 +39,7 @@ def optionselect(event):
         print(str(selectopt)+" option selected!")
     except IndexError:
         print("Global option selected!")
-    optionhide(event)
+    optiontoggle(event)
 
 
 
@@ -60,7 +65,8 @@ optionlist = Listbox(root)
 #TKINTER ELEMENT PROCESSES
 filelist.bind("<Double-Button-1>",doubleselect)
 filelist.bind("<Button-3>",optionselect)
-root.bind("<Button-1>",optionhide)
+filelist.bind("<Button-1>",optionhide)
+
 #FUNCTIONS BELOW
 def exitcatcher(): #A KILL CATCH DESIGNED TO CLOSE ALL WORKING THREADS BEFORE EXITING
     print("killcatch triggered!")
@@ -88,7 +94,7 @@ def read(target):
             dirhandler.append(dir+"/")
         sort = dirhandler+files
         sort.sort()
-        if [] in sort:
+        if [""] in sort:
             print("Nothing found in directory \""+ roots + "\"!")
         variable[roots]= sort
         listhandler = sort
@@ -105,7 +111,10 @@ def read(target):
                 qcounter += 1
 
         dirs[:] = []
-    filepathlabel.config(text="Current path: "+roots)
+    try:
+        filepathlabel.config(text="Current path: "+roots)
+    except:
+        print("Nothing scanned, did you click Scan Directory with nothing in the textbox?")
 
 atexit.register(exitcatcher)
 
