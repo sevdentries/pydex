@@ -5,8 +5,14 @@ import shutil
 import time
 from tkinter import *
 from tkinter import ttk
+import getpass
 reader = ""
 toggle = 1
+
+def optionshow(event):
+    global toggle
+    toggle = 1
+    optionlist.pack()
 
 def optiontoggle(event):
     global toggle
@@ -39,7 +45,7 @@ def optionselect(event):
         print(str(selectopt)+" option selected!")
     except IndexError:
         print("Global option selected!")
-    optiontoggle(event)
+    optionshow(event)
 
 
 
@@ -62,6 +68,14 @@ filelist = Listbox(root, yscrollcommand=filebar.set)
 filelist.bind("<Double-Button-1>",doubleselect)
 filelist.bind("<Button-3>",optionselect)
 optionlist = Listbox(root)
+optionlist.insert(END, "Open")
+optionlist.insert(END, "Cut")
+optionlist.insert(END, "Copy")
+optionlist.insert(END, "Move to...")
+optionlist.insert(END, "Copy to...")
+optionlist.insert(END, "Rename")
+optionlist.insert(END, "Move to trash")
+optionlist.insert(END, "Delete")
 #TKINTER ELEMENT PROCESSES
 filelist.bind("<Double-Button-1>",doubleselect)
 filelist.bind("<Button-3>",optionselect)
@@ -121,9 +135,21 @@ atexit.register(exitcatcher)
 print(os.name)
 if os.name == "nt":
     system = "win"
+    trashpath = "C:/$Recycle.Bin/"
+    try:
+        read(trashpath)
+    except:
+        print("ERROR: No trash directory found!!! DO NOT DELETE ANYTHING!!!")
     read("C:/")
 elif os.name == "posix":
     system = "linux"
+    try:
+        trashpath = "/home/"+getpass.getuser()+"/.local/share/Trash"
+        read(trashpath)
+    except:
+        print("No trash path found! Creating...")
+        trashpath = "/home/"+getpass.getuser()+"/.local/share/Trash"
+        #os.mkdir(trashpath)
     read("/")
 else:
     m = input("This project was designed for Windows and Linux support, sorry! Press enter to exit.")
