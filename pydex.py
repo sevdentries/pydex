@@ -2,6 +2,8 @@ import os
 import sys
 import atexit
 import shutil
+import webbrowser
+import platform
 import time
 from tkinter import *
 from tkinter import ttk
@@ -46,6 +48,7 @@ def actionselect(event):
     compsel = optionlist.curselection()
     if compsel[0] == 0:
         print("Open selected!")
+        procopen()
     elif compsel[0] == 1:
         print("Cut selected!")
     elif compsel[0] == 2:
@@ -65,6 +68,9 @@ def actionselect(event):
         print("Move to trash selected!")
     elif compsel[0] == 7:    
         print("Delete selected!")
+
+def procopen():
+    webbrowser.open(filecompile)
 
 def procrename():
     global filecompile
@@ -189,16 +195,15 @@ def read(target):
 atexit.register(exitcatcher)
 
 print(os.name)
-if os.name == "nt":
-    system = "win"
+system = platform.system()
+if system == "Windows":
     trashpath = "C:/$Recycle.Bin/"
     try:
         read(trashpath)
     except:
         print("ERROR: No trash directory found!!! DO NOT DELETE ANYTHING!!!")
     read("C:/")
-elif os.name == "posix":
-    system = "linux"
+elif system == "Linux":
     try:
         trashpath = "/home/"+getpass.getuser()+"/.local/share/Trash"
         read(trashpath)
