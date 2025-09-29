@@ -29,6 +29,7 @@ def optionhide(event):
     toggle = 0
 
 def doubleselect(event):
+    print("test")
     global reader
     compsel = filelist.curselection()
     select = compsel[0]
