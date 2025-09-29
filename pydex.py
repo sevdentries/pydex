@@ -8,6 +8,7 @@ from tkinter import ttk
 import getpass
 reader = ""
 toggle = 1
+filecompile = ""
 
 def optionshow(event):
     global toggle
@@ -32,18 +33,63 @@ def doubleselect(event):
     print("test")
     global reader
     compsel = filelist.curselection()
-    select = compsel[0]
+    try:
+        select = compsel[0]
+    except IndexError:
+        print("No file selected!")
     select = (filelist.get(compsel[0]))
     if select.endswith("/"):
         read(reader+select)
         print("hi")
 
+def actionselect(event):
+    compsel = optionlist.curselection()
+    if compsel[0] == 0:
+        print("Open selected!")
+    elif compsel[0] == 1:
+        print("Cut selected!")
+    elif compsel[0] == 2:
+        print("Copy selected!")
+    elif compsel[0] == 3:
+        print("Move to... selected!")
+    elif compsel[0] == 4:
+        print("Copy to... selected!")
+    elif compsel[0] == 5:
+        print("Rename selected!")
+        renamewindow.deiconify()
+        renamelabel.pack()
+        renameentry.pack()  
+        renamebutton.pack() 
+
+    elif compsel[0] == 6:
+        print("Move to trash selected!")
+    elif compsel[0] == 7:    
+        print("Delete selected!")
+
+def procrename():
+    global filecompile
+    print(filelist.curselection())
+    if renameentry.get() == "":
+        print("No name entered!")
+        renamewindow.withdraw()
+        return
+    else:
+        dstcompile = reader+renameentry.get()
+        print(filecompile, dstcompile)
+        shutil.move(str(filecompile), str(dstcompile))
+    fileinquestion = filecompile
+    renamewindow.withdraw()
+    print(fileinquestion+", moving to "+ renameentry.get())
+    read(reader)
+
 def optionselect(event):
+    global filecompile
     compsel = filelist.curselection()
     try:
         selectopt = compsel[0]
         selectopt = (filelist.get(compsel[0]))
         print(str(selectopt)+" option selected!")
+        filecompile = reader+selectopt
     except IndexError:
         print("Global option selected!")
     optionshow(event)
@@ -77,7 +123,15 @@ optionlist.insert(END, "Copy to...")
 optionlist.insert(END, "Rename")
 optionlist.insert(END, "Move to trash")
 optionlist.insert(END, "Delete")
+renamewindow = Toplevel(root)
+renamewindow.title("Rename file")
+renamewindow.geometry("300x100")
+renamewindow.withdraw()
+renamelabel = ttk.Label(renamewindow, text="Rename file to:")
+renameentry = ttk.Entry(renamewindow)
+renamebutton = ttk.Button(renamewindow, text="Rename", command=procrename)
 #TKINTER ELEMENT PROCESSES
+optionlist.bind('<Double-Button-1>', actionselect)
 filelist.bind("<Double-Button-1>",doubleselect)
 filelist.bind("<Button-3>",optionselect)
 filelist.bind("<Button-1>",optionhide)
@@ -86,6 +140,7 @@ filelist.bind("<Button-1>",optionhide)
 def exitcatcher(): #A KILL CATCH DESIGNED TO CLOSE ALL WORKING THREADS BEFORE EXITING
     print("killcatch triggered!")
     time.sleep(3)
+
 
 def back(target):
     global reader
