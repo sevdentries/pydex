@@ -2,7 +2,7 @@ import os
 import sys
 import atexit
 import shutil
-import webbrowser
+import subprocess
 import platform
 import time
 from tkinter import *
@@ -11,6 +11,7 @@ import getpass
 reader = ""
 toggle = 1
 filecompile = ""
+dirlist = []
 
 def optionshow(event):
     global toggle
@@ -32,7 +33,7 @@ def optionhide(event):
     toggle = 0
 
 def doubleselect(event):
-    print("test")
+    print("doubleselect")
     global reader
     compsel = filelist.curselection()
     try:
@@ -42,7 +43,8 @@ def doubleselect(event):
     select = (filelist.get(compsel[0]))
     if select.endswith("/"):
         read(reader+select)
-        print("hi")
+    else:
+        procopen()
 
 def actionselect(event):
     compsel = optionlist.curselection()
@@ -70,22 +72,30 @@ def actionselect(event):
         print("Delete selected!")
 
 def procopen():
-    webbrowser.open(filecompile)
+    print()
+    if system == "Linux":
+        subprocess.call(('xdg-open',filecompile))
+    elif system == "Windows":
+        os.startfile(filecompile)
 
 def procrename():
-    global filecompile
+    global filecompile,dirlist
+    print(dirlist)
+    dstcompile = reader+renameentry.get()
     print(filelist.curselection())
     if renameentry.get() == "":
         print("No name entered!")
         renamewindow.withdraw()
         return
+    elif dstcompile == filecompile or renameentry.get() in dirlist:
+        print("File match found, cannot rename in same directory!")
+        pass
     else:
-        dstcompile = reader+renameentry.get()
         print(filecompile, dstcompile)
         shutil.move(str(filecompile), str(dstcompile))
-    fileinquestion = filecompile
+        print(filecompile+", moving to "+ renameentry.get())
     renamewindow.withdraw()
-    print(fileinquestion+", moving to "+ renameentry.get())
+    
     read(reader)
 
 def optionselect(event):
@@ -117,7 +127,7 @@ kill = ttk.Button(root, text="Exit program",command=root.destroy)
 filebar = ttk.Scrollbar(root)
 filepathlabel = ttk.Label(root, text="")
 backbtn = ttk.Button(root, text="Back", command=lambda:back(reader))
-filelist = Listbox(root, yscrollcommand=filebar.set)
+filelist = Listbox(root, yscrollcommand=filebar.set, width=50, height=10)
 filelist.bind("<Double-Button-1>",doubleselect)
 filelist.bind("<Button-3>",optionselect)
 optionlist = Listbox(root)
@@ -144,8 +154,7 @@ filelist.bind("<Button-1>",optionhide)
 
 #FUNCTIONS BELOW
 def exitcatcher(): #A KILL CATCH DESIGNED TO CLOSE ALL WORKING THREADS BEFORE EXITING
-    print("killcatch triggered!")
-    time.sleep(3)
+    print("goodbye world...")
 
 
 def back(target):
@@ -159,7 +168,8 @@ def back(target):
         read(compile)
 
 def read(target):
-    global reader
+    global reader, dirlist
+    dirlist = []
     for(roots,dirs,files) in os.walk(target, topdown=True):
         #exec(roots=dirs+files)
         reader = roots
@@ -168,12 +178,15 @@ def read(target):
         dirhandler = []
         for dir in dirs:
             dirhandler.append(dir+"/")
+            dirlist.append(dir+"/")
         sort = dirhandler+files
         sort.sort()
         if [""] in sort:
             print("Nothing found in directory \""+ roots + "\"!")
         variable[roots]= sort
         listhandler = sort
+        dirlist += sort
+        #print(dirlist)
         #print(variable[roots])
         qcounter = 0
         filelist.delete(0,END)
@@ -190,11 +203,11 @@ def read(target):
     try:
         filepathlabel.config(text="Current path: "+roots)
     except:
-        print("Nothing scanned, did you click Scan Directory with nothing in the textbox?")
+        print("Nothing scanned")
 
 atexit.register(exitcatcher)
 
-print(os.name)
+print(os.name, platform.system())
 system = platform.system()
 if system == "Windows":
     trashpath = "C:/$Recycle.Bin/"
@@ -221,9 +234,9 @@ else:
 
 
 #PACKS
+renamewindow.protocol('WM_DELETE_WINDOW', renamewindow.withdraw)
 filebar.pack(side = RIGHT, fill=Y)
 filelist.pack(side = RIGHT, fill = BOTH)
-optionlist.pack()
 pathvalue.pack()
 trigger1.pack()
 backbtn.pack()
@@ -232,7 +245,5 @@ test.pack()
 filepathlabel.pack()
 #CONFIGS
 filebar.config(command=filelist.yview)
-
-
 
 root.mainloop()
