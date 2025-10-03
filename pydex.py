@@ -106,8 +106,20 @@ def optionselect(event):
         selectopt = (filelist.get(compsel[0]))
         print(str(selectopt)+" option selected!")
         filecompile = reader+selectopt
+        optionlist.delete(0,END)
+        optionlist.insert(END, "Open")
+        optionlist.insert(END, "Cut")
+        optionlist.insert(END, "Copy")
+        optionlist.insert(END, "Move to...")
+        optionlist.insert(END, "Copy to...")
+        optionlist.insert(END, "Rename")
+        optionlist.insert(END, "Move to trash")
+        optionlist.insert(END, "Delete")
     except IndexError:
         print("Global option selected!")
+        optionlist.delete(0,END)
+        optionlist.insert(END,"Make directory...")
+        optionlist.insert(END, "Open in terminal...")
     optionshow(event)
 
 
