@@ -172,12 +172,20 @@ def exitcatcher(): #A KILL CATCH DESIGNED TO CLOSE ALL WORKING THREADS BEFORE EX
 def back(target):
     global reader
     print(reader)
-    if reader == "/":
-        print("You are already at the first directory!")
-    else:
-        compile = reader[:reader.rindex("/")]
-        compile = compile[:(compile.rindex("/"))+1]
-        read(compile)
+    if system == "Linux":
+        if reader == "/":
+            print("You are already at the first directory!")
+        else:
+            compile = reader[:reader.rindex("/")]
+            compile = compile[:(compile.rindex("/"))+1]
+            read(compile)
+    elif system == "Windows":
+        if reader == "C:/":
+            print("You are already at the first directory!")
+        else:
+            compile = reader[:reader.rindex("/")]
+            compile = compile[:(compile.rindex("/"))+1]
+            read(compile)
 
 def read(target):
     global reader, dirlist
