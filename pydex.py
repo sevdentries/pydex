@@ -12,13 +12,14 @@ reader = ""
 toggle = 1
 filecompile = ""
 dirlist = []
+filelistflag = 0 #A flag which is raised when a person decides to open options for the entire directory instead of a specific file
 
-def optionshow(event):
+def optionshow(event): #command for showing the optionlist
     global toggle
     toggle = 1
     optionlist.pack()
 
-def optiontoggle(event):
+def optiontoggle(event): #togglescript to show/hide the option panel.
     global toggle
     if toggle == 1:
         optionlist.pack_forget()
@@ -48,33 +49,42 @@ def doubleselect(event):
 
 def actionselect(event):
     compsel = optionlist.curselection()
-    if compsel[0] == 0:
-        print("Open selected!")
-        procopen()
-    elif compsel[0] == 1:
-        print("Cut selected!")
-    elif compsel[0] == 2:
-        print("Copy selected!")
-    elif compsel[0] == 3:
-        print("Move to... selected!")
-    elif compsel[0] == 4:
-        print("Copy to... selected!")
-    elif compsel[0] == 5:
-        print("Rename selected!")
-        renamewindow.deiconify()
-        renamelabel.pack()
-        renameentry.pack()  
-        renamebutton.pack() 
+     #global filelistflag
+    if filelistflag == 0:
+        if compsel[0] == 0:
+            print("Open selected!")
+            procopen()
+        elif compsel[0] == 1:
+            print("Cut selected!")
+        elif compsel[0] == 2:
+            print("Copy selected!")
+        elif compsel[0] == 3:
+            print("Move to... selected!")
+        elif compsel[0] == 4:
+            print("Copy to... selected!")
+        elif compsel[0] == 5:
+            print("Rename selected!")
+            renamewindow.deiconify()
+            renamelabel.pack()
+            renameentry.pack()  
+            renamebutton.pack() 
 
-    elif compsel[0] == 6:
-        print("Move to trash selected!")
-    elif compsel[0] == 7:    
-        print("Delete selected!")
+        elif compsel[0] == 6:
+            print("Move to trash selected!")
+        elif compsel[0] == 7:    
+            print("Delete selected!")
+    elif filelistflag == 1:
+        if compsel[0] == 0:
+            print("mkdir selected!")
+        elif compsel[0] == 1:
+            print("terminal selected!")
 
 def procopen():
     print()
     if system == "Linux":
-        subprocess.call(('xdg-open',filecompile))
+        #subprocess.call(['xdg-open',filecompile]) 
+        os.system("xdg-open "+ filecompile)
+        print(filecompile)
     elif system == "Windows":
         os.startfile(filecompile)
 
@@ -92,20 +102,26 @@ def procrename():
         pass
     else:
         print(filecompile, dstcompile)
-        shutil.move(str(filecompile), str(dstcompile))
-        print(filecompile+", moving to "+ renameentry.get())
+        try:
+            shutil.move(str(filecompile), str(dstcompile))
+            print(filecompile+", moving to "+ renameentry.get())
+        except PermissionError:
+            print("Permission denied. Maybe try running pydex with sudo permission for this.")
+        
     renamewindow.withdraw()
     
     read(reader)
 
 def optionselect(event):
-    global filecompile
+    global filecompile, filelistflag
     compsel = filelist.curselection()
     try:
         selectopt = compsel[0]
-        selectopt = (filelist.get(compsel[0]))
-        print(str(selectopt)+" option selected!")
+        print(selectopt)
+        selectopt = (filelist.get(compsel[0])) #gets the name of the item chosen
+        print(str(selectopt)+" selected!")
         filecompile = reader+selectopt
+        filelistflag = 0
         optionlist.delete(0,END)
         optionlist.insert(END, "Open")
         optionlist.insert(END, "Cut")
@@ -117,6 +133,7 @@ def optionselect(event):
         optionlist.insert(END, "Delete")
     except IndexError:
         print("Global option selected!")
+        filelistflag = 1
         optionlist.delete(0,END)
         optionlist.insert(END,"Make directory...")
         optionlist.insert(END, "Open in terminal...")
@@ -142,6 +159,8 @@ backbtn = ttk.Button(root, text="Back", command=lambda:back(reader))
 filelist = Listbox(root, yscrollcommand=filebar.set, width=50, height=10)
 filelist.bind("<Double-Button-1>",doubleselect)
 filelist.bind("<Button-3>",optionselect)
+
+
 optionlist = Listbox(root)
 optionlist.insert(END, "Open")
 optionlist.insert(END, "Cut")
@@ -151,6 +170,8 @@ optionlist.insert(END, "Copy to...")
 optionlist.insert(END, "Rename")
 optionlist.insert(END, "Move to trash")
 optionlist.insert(END, "Delete")
+
+
 renamewindow = Toplevel(root)
 renamewindow.title("Rename file")
 renamewindow.geometry("300x100")
