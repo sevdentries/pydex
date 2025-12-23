@@ -18,3 +18,5 @@ https://www.geeksforgeeks.org/python/open-a-new-window-with-a-button-in-python-t
 https://stackoverflow.com/questions/434597/open-document-with-default-os-application-in-python-both-in-windows-and-mac-os
 https://docs.python.org/3/library/shutil.html#shutil.which
 https://forums.raspberrypi.com/viewtopic.php?t=183910
+https://discuss.python.org/t/support-for-file-urls-in-webbrowser-open/81612
+https://stackoverflow.com/questions/7574841/open-a-terminal-from-python #see nir's comment about the deprecated -e thing

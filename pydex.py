@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import platform
 import time
+import webbrowser
 from tkinter import *
 from tkinter import ttk
 import getpass
@@ -45,9 +46,10 @@ def doubleselect(event):
     if select.endswith("/"):
         read(reader+select)
     else:
-        procopen()
+        procopen(reader+select)
+        
 
-def actionselect(event):
+def actionselect(event): #a redirector of actions selected by users to functions
     compsel = optionlist.curselection()
      #global filelistflag
     if filelistflag == 0:
@@ -78,15 +80,33 @@ def actionselect(event):
             print("mkdir selected!")
         elif compsel[0] == 1:
             print("terminal selected!")
+            procterminal(reader)
 
-def procopen():
-    print()
+            
+                          
+def procterminal(selected):
+    print("reader is: "+reader)
     if system == "Linux":
-        #subprocess.call(['xdg-open',filecompile]) 
-        os.system("xdg-open "+ filecompile)
-        print(filecompile)
+        subprocess.run(["ls", reader])
+        
+
+
+
     elif system == "Windows":
-        os.startfile(filecompile)
+        print("procterminal windows called")
+
+def procopen(selected):
+    #global filecompile
+    print("procopen")
+    if system == "Linux":
+        #linux is pretty complicated because using the internal handler xdg-open requires "container rights"
+        #so I found a workaround where webbrowser actually handles all the internal handlers (haha see what i did there)
+        posixfile = "file://"+selected
+        print(posixfile)
+        webbrowser.open(posixfile)
+    elif system == "Windows":
+        #windows doesn't care about containers it just throws the link at someone else lol
+        os.startfile(selected)
 
 def procrename():
     global filecompile,dirlist
@@ -118,7 +138,7 @@ def optionselect(event):
     try:
         selectopt = compsel[0]
         print(selectopt)
-        selectopt = (filelist.get(compsel[0])) #gets the name of the item chosen
+        selectopt = (filelist.get(compsel[0])) #gets the name of the item chosen, zero indexed
         print(str(selectopt)+" selected!")
         filecompile = reader+selectopt
         filelistflag = 0
@@ -155,7 +175,7 @@ trigger1 = ttk.Button(root, text="scan directory", command=lambda:read(pathvalue
 kill = ttk.Button(root, text="Exit program",command=root.destroy)
 filebar = ttk.Scrollbar(root)
 filepathlabel = ttk.Label(root, text="")
-backbtn = ttk.Button(root, text="Back", command=lambda:back(reader))
+backbtn = ttk.Button(root, text="Back", command=lambda:back(reader)) #lambdas are used to signify a delay in python's function calling, specifically the called function bound to this button.
 filelist = Listbox(root, yscrollcommand=filebar.set, width=50, height=10)
 filelist.bind("<Double-Button-1>",doubleselect)
 filelist.bind("<Button-3>",optionselect)
@@ -191,7 +211,9 @@ def exitcatcher(): #A KILL CATCH DESIGNED TO CLOSE ALL WORKING THREADS BEFORE EX
 
 
 def back(target):
-    global reader
+    global reader, toggle
+    optionlist.pack_forget()
+    toggle = 0
     print(reader)
     if system == "Linux":
         if reader == "/":
@@ -209,7 +231,9 @@ def back(target):
             read(compile)
 
 def read(target):
-    global reader, dirlist
+    global reader, dirlist, toggle
+    optionlist.pack_forget()
+    toggle = 0
     dirlist = []
     for(roots,dirs,files) in os.walk(target, topdown=True):
         #exec(roots=dirs+files)
