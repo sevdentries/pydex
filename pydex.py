@@ -12,10 +12,11 @@ import getpass
 reader = ""
 toggle = 1
 filecompile = ""
+compsel = ()
 dirlist = []
 filelistflag = 0 #A flag which is raised when a person decides to open options for the entire directory instead of a specific file
 
-def optionshow(event): #command for showing the optionlist
+def optionshow(event): #command for showing the optionlist.
     global toggle
     toggle = 1
     optionlist.pack()
@@ -40,9 +41,12 @@ def doubleselect(event):
     compsel = filelist.curselection()
     try:
         select = compsel[0]
+        select = (filelist.get(compsel[0]))
     except IndexError:
         print("No file selected!")
-    select = (filelist.get(compsel[0]))
+    
+
+
     if select.endswith("/"):
         read(reader+select)
     else:
@@ -50,63 +54,77 @@ def doubleselect(event):
         
 
 def actionselect(event): #a redirector of actions selected by users to functions
-    compsel = optionlist.curselection()
-     #global filelistflag
+    global compsel
+    optsel = optionlist.curselection()
+    print(compsel)
+    #global filelistflag #this trigger is on runtime so it is effectively global, no need for global call
+    select2 = (filelist.get(compsel[0]))
     if filelistflag == 0:
-        if compsel[0] == 0:
+        if optsel[0] == 0:
             print("Open selected!")
-            procopen()
-        elif compsel[0] == 1:
+            print(reader)
+            print(select2)
+            procopen(reader+select2)
+        elif optsel[0] == 1:
             print("Cut selected!")
-        elif compsel[0] == 2:
+        elif optsel[0] == 2:
             print("Copy selected!")
-        elif compsel[0] == 3:
+        elif optsel[0] == 3:
             print("Move to... selected!")
-        elif compsel[0] == 4:
+        elif optsel[0] == 4:
             print("Copy to... selected!")
-        elif compsel[0] == 5:
+        elif optsel[0] == 5:
             print("Rename selected!")
             renamewindow.deiconify()
             renamelabel.pack()
             renameentry.pack()  
             renamebutton.pack() 
 
-        elif compsel[0] == 6:
+        elif optsel[0] == 6:
             print("Move to trash selected!")
-        elif compsel[0] == 7:    
+        elif optsel[0] == 7:    
             print("Delete selected!")
     elif filelistflag == 1:
-        if compsel[0] == 0:
+        if optsel[0] == 0:
             print("mkdir selected!")
-        elif compsel[0] == 1:
+            mkdirwindow.deiconify()
+            mkdirbutton.pack()
+            mkdirentry.pack()
+            mkdirlabel.pack()
+    print("reader: "+reader)
+
+'''        elif compsel[0] == 1:
             print("terminal selected!")
             procterminal(reader)
-
+'''
             
                           
-def procterminal(selected):
+'''def procterminal(selected):
     print("reader is: "+reader)
     if system == "Linux":
-        subprocess.run(["ls", reader])
-        
-
-
-
+        subprocess.run(["gnome-terminal"])
     elif system == "Windows":
         print("procterminal windows called")
+'''
+
+def procmkdir(path):
+    pass
 
 def procopen(selected):
     #global filecompile
     print("procopen")
-    if system == "Linux":
-        #linux is pretty complicated because using the internal handler xdg-open requires "container rights"
-        #so I found a workaround where webbrowser actually handles all the internal handlers (haha see what i did there)
-        posixfile = "file://"+selected
-        print(posixfile)
-        webbrowser.open(posixfile)
-    elif system == "Windows":
-        #windows doesn't care about containers it just throws the link at someone else lol
-        os.startfile(selected)
+    if selected.endswith("/") == False:
+        if system == "Linux":
+            #linux is pretty complicated because using the internal handler xdg-open requires "container rights"
+            #so I found a workaround where webbrowser actually handles all the internal handlers (haha see what i did there)
+            posixfile = "file://"+selected
+            print(posixfile)
+            webbrowser.open(posixfile)
+        elif system == "Windows":
+            #windows doesn't care about containers it just throws the link at someone else lol
+            os.startfile(selected)
+    elif selected.endswith("/") == True:
+        read(selected)
 
 def procrename():
     global filecompile,dirlist
@@ -126,14 +144,14 @@ def procrename():
             shutil.move(str(filecompile), str(dstcompile))
             print(filecompile+", moving to "+ renameentry.get())
         except PermissionError:
-            print("Permission denied. Maybe try running pydex with sudo permission for this.")
+            print("Permission denied. Maybe try running pydex with sudo/administration permissions for this.")
         
     renamewindow.withdraw()
     
     read(reader)
 
 def optionselect(event):
-    global filecompile, filelistflag
+    global filecompile, filelistflag, compsel
     compsel = filelist.curselection()
     try:
         selectopt = compsel[0]
@@ -156,7 +174,6 @@ def optionselect(event):
         filelistflag = 1
         optionlist.delete(0,END)
         optionlist.insert(END,"Make directory...")
-        optionlist.insert(END, "Open in terminal...")
     optionshow(event)
 
 
@@ -195,10 +212,19 @@ optionlist.insert(END, "Delete")
 renamewindow = Toplevel(root)
 renamewindow.title("Rename file")
 renamewindow.geometry("300x100")
-renamewindow.withdraw()
 renamelabel = ttk.Label(renamewindow, text="Rename file to:")
 renameentry = ttk.Entry(renamewindow)
 renamebutton = ttk.Button(renamewindow, text="Rename", command=procrename)
+renamewindow.withdraw()
+
+mkdirwindow = Toplevel(root)
+mkdirwindow.title("Make directory")
+mkdirwindow.geometry("300x100")
+mkdirlabel = ttk.Label(mkdirwindow, text="Enter the name of the new directory:")
+mkdirentry = ttk.Entry(mkdirwindow)
+mkdirbutton = ttk.Button(mkdirwindow, text="Create", command=lambda:procmkdir(reader))
+mkdirwindow.withdraw()
+
 #TKINTER ELEMENT PROCESSES
 optionlist.bind('<Double-Button-1>', actionselect)
 filelist.bind("<Double-Button-1>",doubleselect)
@@ -300,6 +326,7 @@ else:
 
 #PACKS
 renamewindow.protocol('WM_DELETE_WINDOW', renamewindow.withdraw)
+mkdirwindow.protocol("WM_DELETE_WINDOW", mkdirwindow.withdraw)
 filebar.pack(side = RIGHT, fill=Y)
 filelist.pack(side = RIGHT, fill = BOTH)
 pathvalue.pack()
