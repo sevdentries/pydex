@@ -4,15 +4,15 @@ import atexit
 import shutil
 import subprocess
 import platform
-import time
-import webbrowser
+import time 
+import webbrowser 
 from tkinter import *
 from tkinter import ttk
-import getpass
-reader = ""
-toggle = 1
-filecompile = ""
-compsel = ()
+import getpass 
+reader = "" #
+toggle = 1 #A simple toggle flag for showing/hiding the option panel.
+filecompile = "" 
+compsel = () #A global tracker to store the current selected file index under filelist. This differs from optsel which locally tracks indexes under optionlist.
 dirlist = []
 filelistflag = 0 #A flag which is raised when a person decides to open options for the entire directory instead of a specific file
 
@@ -30,12 +30,12 @@ def optiontoggle(event): #togglescript to show/hide the option panel.
         optionlist.pack()
         toggle = 1
 
-def optionhide(event):
+def optionhide(event): #command for hiding the optionlist.
     global toggle
     optionlist.pack_forget()
     toggle = 0
 
-def doubleselect(event):
+def doubleselect(event): #redirects double click events to open files or read directories
     print("doubleselect")
     global reader
     compsel = filelist.curselection()
@@ -44,8 +44,6 @@ def doubleselect(event):
         select = (filelist.get(compsel[0]))
     except IndexError:
         print("No file selected!")
-    
-
 
     if select.endswith("/"):
         read(reader+select)
@@ -54,10 +52,8 @@ def doubleselect(event):
         
 
 def actionselect(event): #a redirector of actions selected by users to functions
-    global compsel
     optsel = optionlist.curselection()
     print(compsel)
-    #global filelistflag #this trigger is on runtime so it is effectively global, no need for global call
     select2 = (filelist.get(compsel[0]))
     if filelistflag == 0:
         if optsel[0] == 0:
@@ -75,7 +71,7 @@ def actionselect(event): #a redirector of actions selected by users to functions
             print("Copy to... selected!")
         elif optsel[0] == 5:
             print("Rename selected!")
-            renamewindow.deiconify()
+            renamewindow.deiconify() 
             renamelabel.pack()
             renameentry.pack()  
             renamebutton.pack() 
