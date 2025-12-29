@@ -8,6 +8,7 @@ import time
 import webbrowser 
 from tkinter import *
 from tkinter import ttk
+import tkinter as tk
 import getpass 
 reader = "" #
 toggle = 1 #A simple toggle flag for showing/hiding the option panel.
@@ -34,6 +35,7 @@ def optionhide(event): #command for hiding the optionlist.
     global toggle
     optionlist.pack_forget()
     toggle = 0
+    filelist.selection_clear(0,tk.END)
 
 def doubleselect(event): #redirects double click events to open files or read directories
     print("doubleselect")
@@ -54,7 +56,10 @@ def doubleselect(event): #redirects double click events to open files or read di
 def actionselect(event): #a redirector of actions selected by users to functions
     optsel = optionlist.curselection()
     print(compsel)
-    select2 = (filelist.get(compsel[0]))
+    try:
+        select2 = (filelist.get(compsel[0]))
+    except IndexError:
+        select2 = ""
     if filelistflag == 0:
         if optsel[0] == 0:
             print("Open selected!")
@@ -89,22 +94,21 @@ def actionselect(event): #a redirector of actions selected by users to functions
             mkdirlabel.pack()
     print("reader: "+reader)
 
-'''        elif compsel[0] == 1:
-            print("terminal selected!")
-            procterminal(reader)
-'''
-            
-                          
-'''def procterminal(selected):
-    print("reader is: "+reader)
-    if system == "Linux":
-        subprocess.run(["gnome-terminal"])
-    elif system == "Windows":
-        print("procterminal windows called")
-'''
 
 def procmkdir(path):
-    pass
+    mkdcompile = path+mkdirentry.get()
+    if mkdirentry.get() == "":
+        print("No name entered!")
+    else:
+        try:
+            os.mkdir(mkdcompile)
+            read(mkdcompile)
+        except FileExistsError:
+            print("Error: Directory with the same name already exists!")
+        except PermissionError:
+            print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.")
+    mkdirwindow.withdraw()
+    
 
 def procopen(selected):
     #global filecompile
@@ -128,11 +132,9 @@ def procrename():
     dstcompile = reader+renameentry.get()
     print(filelist.curselection())
     if renameentry.get() == "":
-        print("No name entered!")
-        renamewindow.withdraw()
-        return
+        print("Error: No name entered!")
     elif dstcompile == filecompile or renameentry.get() in dirlist:
-        print("File match found, cannot rename in same directory!")
+        print("Error: File match found, cannot rename in same directory!")
         pass
     else:
         print(filecompile, dstcompile)
@@ -140,7 +142,7 @@ def procrename():
             shutil.move(str(filecompile), str(dstcompile))
             print(filecompile+", moving to "+ renameentry.get())
         except PermissionError:
-            print("Permission denied. Maybe try running pydex with sudo/administration permissions for this.")
+            print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.")
         
     renamewindow.withdraw()
     
@@ -294,23 +296,28 @@ def read(target):
 
 atexit.register(exitcatcher)
 
+
+#this entire chunk below is the inital commands run at start, which checks the system platform, 
+#and starts the user at the highest branch of their respective OS.
 print(os.name, platform.system())
 system = platform.system()
 if system == "Windows":
+    '''
     trashpath = "C:/$Recycle.Bin/"
     try:
         read(trashpath)
     except:
-        print("ERROR: No trash directory found!!! DO NOT DELETE ANYTHING!!!")
+        print("ERROR: No trash directory found!!! DO NOT DELETE ANYTHING!!!")'''
     read("C:/")
 elif system == "Linux":
+    '''
     try:
         trashpath = "/home/"+getpass.getuser()+"/.local/share/Trash"
         read(trashpath)
     except:
         print("No trash path found! Creating...")
         trashpath = "/home/"+getpass.getuser()+"/.local/share/Trash"
-        #os.mkdir(trashpath)
+        os.mkdir(trashpath)'''
     read("/")
 else:
     m = input("This project was designed for Windows and Linux support, sorry! Press enter to exit.")
