@@ -10,7 +10,7 @@ from tkinter import *
 from tkinter import ttk
 import tkinter as tk
 import getpass 
-reader = "" #
+reader = "" #A global tracker to store the current directory being read.
 toggle = 1 #A simple toggle flag for showing/hiding the option panel.
 filecompile = "" 
 compsel = () #A global tracker to store the current selected file index under filelist. This differs from optsel which locally tracks indexes under optionlist.
@@ -72,6 +72,10 @@ def actionselect(event): #a redirector of actions selected by users to functions
             print("Copy selected!")
         elif optsel[0] == 3:
             print("Move to... selected!")
+            movewindow.deiconify()
+            movebutton.pack()
+            moveentry.pack()
+            movelabel.pack()
         elif optsel[0] == 4:
             print("Copy to... selected!")
         elif optsel[0] == 5:
@@ -94,6 +98,33 @@ def actionselect(event): #a redirector of actions selected by users to functions
             mkdirlabel.pack()
     print("reader: "+reader)
 
+def procmove():
+    movecompile = filecompile
+    endcompile = moveentry.get()
+    filename = filelist.get(compsel[0])
+    endpath = str(moveentry.get()+filename)
+    if endcompile == "":
+        print("Error: No path entered!")
+        movewindow.withdraw()
+    elif not endcompile.endswith("/"):
+        print("Error: Format incorrect! Please make sure to add a backslash at the end of your path!")
+        movewindow.withdraw()
+    elif os.path.exists(endcompile):
+        try:
+            if not search(endcompile,filename):
+                shutil.move(str(movecompile), endpath)
+                print(movecompile+", moving to "+ endpath)
+                read(endcompile)
+                movewindow.withdraw()
+            else:
+                print("Error: Cannot move to directory with same file/file name!")
+                movewindow.withdraw()
+        except PermissionError:
+            print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.")
+            movewindow.withdraw()
+    else:
+        print("Error: Path entered doesn't exist!")
+        movewindow.withdraw()
 
 def procmkdir(path):
     mkdcompile = path+mkdirentry.get()
@@ -111,7 +142,6 @@ def procmkdir(path):
     
 
 def procopen(selected):
-    #global filecompile
     print("procopen")
     if selected.endswith("/") == False:
         if system == "Linux":
@@ -223,6 +253,14 @@ mkdirentry = ttk.Entry(mkdirwindow)
 mkdirbutton = ttk.Button(mkdirwindow, text="Create", command=lambda:procmkdir(reader))
 mkdirwindow.withdraw()
 
+movewindow = Toplevel(root)
+movewindow.title("Move to")
+movewindow.geometry("300x100")
+movelabel = ttk.Label(movewindow, text="Enter the path to the directory:")
+moveentry = ttk.Entry(movewindow)
+movebutton = ttk.Button(movewindow, text="Move", command=procmove)
+movewindow.withdraw()
+
 #TKINTER ELEMENT PROCESSES
 optionlist.bind('<Double-Button-1>', actionselect)
 filelist.bind("<Double-Button-1>",doubleselect)
@@ -253,6 +291,20 @@ def back(target):
             compile = reader[:reader.rindex("/")]
             compile = compile[:(compile.rindex("/"))+1]
             read(compile)
+
+def search(path, starget):
+    searchlist = []
+    sdirlist = []
+    for(roots,dirs,files) in os.walk(path, topdown=True):
+        searchlist = files
+        for dir in dirs:
+            sdirlist.append(dir+"/")
+        dirs[:] = []
+    searchlist = sdirlist + searchlist
+    if starget in searchlist:
+        return True
+    else:
+        return False
 
 def read(target):
     global reader, dirlist, toggle
@@ -288,7 +340,7 @@ def read(target):
                 filelist.insert(END, dirfiles)
                 qcounter += 1
 
-        dirs[:] = []
+        dirs[:] = [] #really important for stopping the neverending train which is os.walk haha
     try:
         filepathlabel.config(text="Current path: "+roots)
     except:
@@ -302,22 +354,8 @@ atexit.register(exitcatcher)
 print(os.name, platform.system())
 system = platform.system()
 if system == "Windows":
-    '''
-    trashpath = "C:/$Recycle.Bin/"
-    try:
-        read(trashpath)
-    except:
-        print("ERROR: No trash directory found!!! DO NOT DELETE ANYTHING!!!")'''
     read("C:/")
 elif system == "Linux":
-    '''
-    try:
-        trashpath = "/home/"+getpass.getuser()+"/.local/share/Trash"
-        read(trashpath)
-    except:
-        print("No trash path found! Creating...")
-        trashpath = "/home/"+getpass.getuser()+"/.local/share/Trash"
-        os.mkdir(trashpath)'''
     read("/")
 else:
     m = input("This project was designed for Windows and Linux support, sorry! Press enter to exit.")
