@@ -70,6 +70,7 @@ def actionselect(event): #a redirector of actions selected by users to functions
             print("Cut selected!")
         elif optsel[0] == 2:
             print("Copy selected!")
+            proccopy()
         elif optsel[0] == 3:
             print("Move to... selected!")
             movewindow.deiconify()
@@ -84,7 +85,6 @@ def actionselect(event): #a redirector of actions selected by users to functions
             renamelabel.pack()
             renameentry.pack()  
             renamebutton.pack() 
-
         elif optsel[0] == 6:
             print("Move to trash selected!")
         elif optsel[0] == 7:    
@@ -96,7 +96,24 @@ def actionselect(event): #a redirector of actions selected by users to functions
             mkdirbutton.pack()
             mkdirentry.pack()
             mkdirlabel.pack()
+        elif optsel[0] == 1:
+            print("Paste selected!")
     print("reader: "+reader)
+
+def proccopy():
+    fullpath = filecompile+"[-/pydex/-]"
+    root.clipboard_clear()
+    root.clipboard_append(fullpath)
+    print("copied: "+fullpath)
+    root.update()
+
+def procpaste():
+    pasteread = root.clipboard_get()
+    if pasteread.endswith("[-/pydex/-]"):
+        pasteread = pasteread.replace("[-/pydex/-]","")
+        ################################################################continue here, use shutil copytree and copy to copy the directory/file gnight
+    else:
+        print("No pastefiles/directories found!")
 
 def procmove():
     movecompile = filecompile
