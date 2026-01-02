@@ -2,20 +2,18 @@ import os
 import sys
 import atexit
 import shutil
-import subprocess
 import platform
-import time 
 import webbrowser 
 from tkinter import *
 from tkinter import ttk
 import tkinter as tk
-import getpass 
 reader = "" #A global tracker to store the current directory being read.
 toggle = 1 #A simple toggle flag for showing/hiding the option panel.
 filecompile = "" 
 compsel = () #A global tracker to store the current selected file index under filelist. This differs from optsel which locally tracks indexes under optionlist.
 dirlist = []
 filelistflag = 0 #A flag which is raised when a person decides to open options for the entire directory instead of a specific file
+clipstore = "" #A storage variable for the user's previous clipboard store, used for cut/copy/paste.
 
 def optionshow(event): #command for showing the optionlist.
     global toggle
@@ -68,6 +66,7 @@ def actionselect(event): #a redirector of actions selected by users to functions
             procopen(reader+select2)
         elif optsel[0] == 1:
             print("Cut selected!")
+            proccut()
         elif optsel[0] == 2:
             print("Copy selected!")
             proccopy()
@@ -79,16 +78,22 @@ def actionselect(event): #a redirector of actions selected by users to functions
             movelabel.pack()
         elif optsel[0] == 4:
             print("Copy to... selected!")
+            copytowindow.deiconify()
+            copytobutton.pack()
+            copytolabel.pack()
+            copytoentry.pack()
         elif optsel[0] == 5:
             print("Rename selected!")
             renamewindow.deiconify() 
             renamelabel.pack()
             renameentry.pack()  
             renamebutton.pack() 
-        elif optsel[0] == 6:
-            print("Move to trash selected!")
-        elif optsel[0] == 7:    
+        elif optsel[0] == 6:    
             print("Delete selected!")
+            deletewindow.deiconify()
+            deletelabel.pack()
+            deletebuttonyes.pack()
+            deletebuttonno.pack()
     elif filelistflag == 1:
         if optsel[0] == 0:
             print("mkdir selected!")
@@ -98,22 +103,171 @@ def actionselect(event): #a redirector of actions selected by users to functions
             mkdirlabel.pack()
         elif optsel[0] == 1:
             print("Paste selected!")
+            procpaste()
     print("reader: "+reader)
 
-def proccopy():
-    fullpath = filecompile+"[-/pydex/-]"
+def proccut():
+    global clipstore
+    fullpath = filecompile+"[-/cutpydex/-]"
+    if (root.clipboard_get()).endswith("[-/cutpydex/-]") or (root.clipboard_get()).endswith("[-/pydex/-]"):
+        print("Warning: Double exception triggered, ignoring clipstore!")
+        root.clipboard_clear()
+        root.clipboard_append(clipstore)
+        root.update()
+    clipstore = root.clipboard_get()
     root.clipboard_clear()
     root.clipboard_append(fullpath)
+    print("stored: "+clipstore)
     print("copied: "+fullpath)
     root.update()
 
+
+def proccopy():
+    global clipstore
+    fullpath = filecompile+"[-/pydex/-]"
+    if (root.clipboard_get()).endswith("[-/cutpydex/-]") or (root.clipboard_get()).endswith("[-/pydex/-]"):
+        print("Warning: Double exception triggered, ignoring clipstore!")
+        root.clipboard_clear()
+        root.clipboard_append(clipstore)
+        root.update()
+    clipstore = root.clipboard_get()
+    root.clipboard_clear()
+    root.clipboard_append(fullpath)
+    print("stored: "+clipstore)
+    print("copied: "+fullpath)
+    root.update()
+
+def procdelete():
+    try:
+        os.remove(filecompile)
+        print("File at "+filecompile+" has been deleted!")
+        read(reader)
+        deletewindow.withdraw()
+    except PermissionError:
+        print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.")
+        deletewindow.withdraw()
+    except IsADirectoryError:
+        try:
+            shutil.rmtree(filecompile)
+            print("Directory at "+filecompile+" has been deleted!")
+            read(reader)
+            deletewindow.withdraw()
+        except PermissionError:
+            print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.")
+            deletewindow.withdraw()
+
 def procpaste():
+    global clipstore
     pasteread = root.clipboard_get()
     if pasteread.endswith("[-/pydex/-]"):
         pasteread = pasteread.replace("[-/pydex/-]","")
-        ################################################################continue here, use shutil copytree and copy to copy the directory/file gnight
+        if pasteread.endswith("/"):
+            endpath = reader+(pasteread.split("/"))[-2] + "/"
+            try:
+                shutil.copytree(pasteread,endpath)
+                print("Pasting: "+pasteread+" to "+reader+"!")
+                read(reader)
+            except FileExistsError:
+                print("ErrorD: Cannot paste to a directory with the same file!")
+            except PermissionError:
+                print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.")
+            except FileNotFoundError:
+                print("Error: Source file was not found!")
+        elif pasteread == "":
+            print("Error: Paste is NULL! Ignoring...") #If paste prefix was found but the string was then empty
+        else:
+            try:
+                endpath = reader+(pasteread.split("/"))[-1]
+                shutil.copy2(pasteread, endpath)
+                print("Pasting: "+pasteread+" to "+reader+"!")
+                read(reader)
+            except FileExistsError:
+                print("ErrorF: Cannot paste to a directory with the same file!")
+            except PermissionError:
+                print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.")
+            except FileNotFoundError:
+                print("Error: Source file was not found!")
+            except:
+                print("Error: Source file matches destination!")
+
+        root.clipboard_clear()
+        root.clipboard_append(clipstore)
+        print("recopied: "+clipstore)
+        root.update()
+
+    elif pasteread.endswith("[-/cutpydex/-]"):
+        pasteread = pasteread.replace("[-/cutpydex/-]","")
+        if pasteread.endswith("/"):
+            endpath = reader+(pasteread.split("/"))[-2] + "/"
+            try:
+                shutil.copytree(pasteread,endpath)
+                print("Pasting: "+pasteread+" to "+reader+"!")
+                shutil.rmtree(pasteread)
+                print("Deleted cut directory at: "+pasteread+"!")
+                read(reader)
+            except FileExistsError:
+                print("ErrorD: Cannot paste to a directory with the same file!")
+            except PermissionError:
+                print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.")
+            except FileNotFoundError:
+                print("Error: Source file was not found!")
+            except:
+                print("Error: Source file matches destination!")
+        elif pasteread == "":
+            print("Error: Paste is NULL! Ignoring...") #If cut prefix was found but the string was then empty
+        else:
+            try:
+                endpath = reader+(pasteread.split("/"))[-1]
+                shutil.copy2(pasteread, endpath)
+                print("Pasting: "+pasteread+" to "+reader+"!")
+                os.remove(pasteread)
+                print("Deleted cut file at: "+pasteread+"!")
+                read(reader)
+            except FileExistsError:
+                print("ErrorF: Cannot paste to a directory with the same file!")
+            except PermissionError:
+                print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.")
+            except FileNotFoundError:
+                print("Error: Source file was not found!")
+            except:
+                print("Error: Source file matches destination!")
+
+        root.clipboard_clear()
+        root.clipboard_append(clipstore)
+        print("recopied: "+clipstore)
+        root.update()
     else:
         print("No pastefiles/directories found!")
+
+def proccopyto():
+    copyingfile = filecompile
+    endcompile = copytoentry.get()
+    filename = filelist.get(compsel[0])
+    endpath = str(copytoentry.get()+filename)
+    if endcompile == "":
+        print("Error: No path entered!")
+    elif not endcompile.endswith("/"):
+        print("Error: Format incorrect! Please make sure to add a backslash at the end of your path!")
+    elif os.path.exists(endcompile):
+        try:
+            if not search(endcompile, filename):
+                if filename.endswith("/"):
+                    shutil.copytree(copyingfile,endpath)
+                    print("Copying Directory: "+copyingfile+" to "+endcompile+"!")
+                    read(endcompile)
+                else:
+                    shutil.copy2(copyingfile,endpath)
+                    print("Copying File: "+filename+" to "+endcompile+"!")
+                    read(endcompile)
+            else:
+                print("Error: Copy source already exists at destination!")
+        except PermissionError:
+            print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.")
+    else:
+        print("Error: Path entered doesn't exist!")
+        
+    copytowindow.withdraw()
+
 
 def procmove():
     movecompile = filecompile
@@ -212,13 +366,13 @@ def optionselect(event):
         optionlist.insert(END, "Move to...")
         optionlist.insert(END, "Copy to...")
         optionlist.insert(END, "Rename")
-        optionlist.insert(END, "Move to trash")
         optionlist.insert(END, "Delete")
     except IndexError:
         print("Global option selected!")
         filelistflag = 1
         optionlist.delete(0,END)
         optionlist.insert(END,"Make directory...")
+        optionlist.insert(END, "Paste")
     optionshow(event)
 
 
@@ -238,7 +392,7 @@ kill = ttk.Button(root, text="Exit program",command=root.destroy)
 filebar = ttk.Scrollbar(root)
 filepathlabel = ttk.Label(root, text="")
 backbtn = ttk.Button(root, text="Back", command=lambda:back(reader)) #lambdas are used to signify a delay in python's function calling, specifically the called function bound to this button.
-filelist = Listbox(root, yscrollcommand=filebar.set, width=50, height=10)
+filelist = Listbox(root, yscrollcommand=filebar.set, width=50, height=10,exportselection=True)
 filelist.bind("<Double-Button-1>",doubleselect)
 filelist.bind("<Button-3>",optionselect)
 
@@ -250,7 +404,6 @@ optionlist.insert(END, "Copy")
 optionlist.insert(END, "Move to...")
 optionlist.insert(END, "Copy to...")
 optionlist.insert(END, "Rename")
-optionlist.insert(END, "Move to trash")
 optionlist.insert(END, "Delete")
 
 
@@ -277,6 +430,22 @@ movelabel = ttk.Label(movewindow, text="Enter the path to the directory:")
 moveentry = ttk.Entry(movewindow)
 movebutton = ttk.Button(movewindow, text="Move", command=procmove)
 movewindow.withdraw()
+
+copytowindow = Toplevel(root)
+copytowindow.title("Copy To")
+copytowindow.geometry("300x100")
+copytolabel = ttk.Label(copytowindow, text="Enter the path to the directory:")
+copytoentry = ttk.Entry(copytowindow)
+copytobutton = ttk.Button(copytowindow, text="Copy", command=proccopyto)
+copytowindow.withdraw()
+
+deletewindow = Toplevel(root)
+deletewindow.title("Delete")
+deletewindow.geometry("300x100")
+deletelabel = ttk.Label(deletewindow, text="Are you sure you want to delete?")
+deletebuttonyes = ttk.Button(deletewindow, text="Yes", command=procdelete)
+deletebuttonno = ttk.Button(deletewindow, text="No", command=deletewindow.withdraw)
+deletewindow.withdraw()
 
 #TKINTER ELEMENT PROCESSES
 optionlist.bind('<Double-Button-1>', actionselect)
@@ -385,6 +554,9 @@ else:
 #PACKS
 renamewindow.protocol('WM_DELETE_WINDOW', renamewindow.withdraw)
 mkdirwindow.protocol("WM_DELETE_WINDOW", mkdirwindow.withdraw)
+deletewindow.protocol("WM_DELETE_WINDOW", deletewindow.withdraw)
+copytowindow.protocol("WM_DELETE_WINDOW", copytowindow.withdraw)
+
 filebar.pack(side = RIGHT, fill=Y)
 filelist.pack(side = RIGHT, fill = BOTH)
 pathvalue.pack()

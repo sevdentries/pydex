@@ -21,3 +21,4 @@ https://forums.raspberrypi.com/viewtopic.php?t=183910
 https://discuss.python.org/t/support-for-file-urls-in-webbrowser-open/81612
 https://stackoverflow.com/questions/7574841/open-a-terminal-from-python #see nir's comment about the deprecated -e thing
 https://www.geeksforgeeks.org/python/python-os-mkdir-method/
+https://docs.python.org/3/library/shutil.html
