@@ -152,9 +152,6 @@ def procdelete(): #delete a file or directory
         try:
             shutil.rmtree(filecompile) #shutil.rmtree does that :))
             print("Directory at "+filecompile+" has been deleted!")
-            read(reader)
-            deletewindow.withdraw()
-        except PermissionError:
             read(reader) #reread the list
             deletewindow.withdraw() #delete the window
         except PermissionError: #and error handling...
