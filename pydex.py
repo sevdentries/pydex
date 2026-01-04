@@ -9,6 +9,7 @@ import stat
 from tkinter import *
 from tkinter import ttk
 import tkinter as tk
+system = platform.system()
 reader = "" #A global tracker to store the current directory being read.
 toggle = 1 #A simple toggle flag for showing/hiding the option panel.
 filecompile = "" 
@@ -343,43 +344,56 @@ def procopen(selected): #open (by open i mean run) things
     elif selected.endswith("/") == True:
         read(selected) #just in case somehow this function gets called for a directory (don't worry doubleselect should catch this)
 
-def procrename():
+def procrename(): #renaming files, wow
     global filecompile,dirlist,compsel
-    print(dirlist)
-    dstcompile = reader+renameentry.get()
-    compsel = filelist.curselection()
-    filename = (filelist.get(compsel[0]))
-    fileprefix = "."+(filename.split("."))[-1]
-    print(fileprefix)
-    
-    if renameentry.get() == "":
+    print(dirlist) #dirlist is a list containing the current contents of the directory being read.
+    dstcompile = reader+renameentry.get() #assemble the target path of the new file based on the user's entry in renameentry
+    compsel = filelist.curselection() #also get the index of the file selected for the next line
+    filename = (filelist.get(compsel[0])) #retrieve the filename by fetching the index compsel in filelist. returns the original filename.
+    fileprefix = "."+(filename.split("."))[-1] 
+    #above, 
+    #separate the text and find the file's extension by splitting the name into a list by "." and retrieving the last entry on the list.
+    print(fileprefix) #program uses this as reference for the next couple lines.
+    if "." in renameentry.get(): #if the user has specified the extension, leave it be and let shutil.move change the extension.
+        print("Prefix detected!")
+    else: #if the user just enters a name with no extension, add back the file's original extension and update the final path to dstcompile.
+        dstcompile = reader + renameentry.get() + fileprefix
+        print("Reconstructed prefixes with prefix: "+fileprefix)
+
+    if renameentry.get() == "": #error handling to check if user input is empty
         print("Error: No name entered!")
-    elif dstcompile == filecompile or renameentry.get() in dirlist:
+    elif dstcompile == filecompile or renameentry.get() in dirlist: #check for a matching file with the same name in the directory
         print("Error: File match found, cannot rename in same directory!")
-        pass
     else:
         print(filecompile, dstcompile)
-        try:
-            shutil.move(str(filecompile), str(dstcompile))
+        try: #error handling try statement
+            shutil.move(str(filecompile), str(dstcompile)) 
+#shutil.move is versatile because if you change the filename in destination with the same path it will essentially just rename the file.
             print(filecompile+", moving to "+ renameentry.get())
-        except PermissionError:
+        except PermissionError: #straight forward
             print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.")
         
-    renamewindow.withdraw()
+    renamewindow.withdraw() #close the window.
     
-    read(reader)
+    read(reader) #and make sure to refresh!
 
-def optionselect(event):
-    global filecompile, filelistflag, compsel
-    compsel = filelist.curselection()
+def optionselect(event): 
+    #listboxes in tkinter have to programmatically make entries for lists. so for something like a list of options with changing
+    #options based on the user's selection, there has to be a script that logically decides what entries to add to the optionlist
+    #based on what the user has selected; that is what optionselect does.
+    #there are two main choices: user selects options for a specific file, or user selects options for the directory being displayed.
+
+    global filecompile, filelistflag, compsel #need some globals first
+    compsel = filelist.curselection() #this alone can decide the choice because if the user hasn't selected anything
+    #and called the optionselect() function, an empty tuple is returned.
     try:
-        selectopt = compsel[0]
+        selectopt = compsel[0] #jank logic but the choice is here where if the tuple is empty it will raise exception IndexError.
         print(selectopt)
-        selectopt = (filelist.get(compsel[0])) #gets the name of the item chosen, zero indexed
+        selectopt = (filelist.get(compsel[0])) #gets the name of the file chosen, zero indexed
         print(str(selectopt)+" selected!")
-        filecompile = reader+selectopt
-        filelistflag = 0
-        optionlist.delete(0,END)
+        filecompile = reader+selectopt #filecompile is not used in this function, but it is helpful to update it for other functions.
+        filelistflag = 0 #tell actionselect() whether the user selected a file or the whole directory.
+        optionlist.delete(0,END) #clear the optionlist and then insert the options below, each entry at the end of the last.
         optionlist.insert(END, "Open")
         optionlist.insert(END, "Cut")
         optionlist.insert(END, "Copy")
@@ -387,13 +401,13 @@ def optionselect(event):
         optionlist.insert(END, "Copy to...")
         optionlist.insert(END, "Rename")
         optionlist.insert(END, "Delete")
-    except IndexError:
+    except IndexError: #if compsel[0] fails, the user hasnt selected any file and we know to display options for the whole directory instead.
         print("Global option selected!")
-        filelistflag = 1
-        optionlist.delete(0,END)
+        filelistflag = 1 #tell actionselect as well.
+        optionlist.delete(0,END) #same as above, delete everything and add entries, one after another.
         optionlist.insert(END,"Make directory...")
         optionlist.insert(END, "Paste")
-    optionshow(event)
+    optionshow(event) #and show the optionlist.
 
 def entrysoftflag(event):
     global entryflag
@@ -403,27 +417,33 @@ def entrysoftflag(event):
         
 
 #ROOT BELOW
-
-root = Tk()
-root.geometry("600x400")
-style = ttk.Style(root)
-style.theme_use('clam')
-reader = ""
-root.title("PyDex")
-pathvalue = ttk.Entry(root)
-pathvalue.insert(0, "Enter a filepath...")
-#test = ttk.Label(root, text="This is a test of the directory scanning system.")
-trigger1 = ttk.Button(root, text="scan directory", command=lambda:read(pathvalue.get()))
-kill = ttk.Button(root, text="Exit program",command=root.destroy)
+#These elements are the definitions of the elements. optionlist starts with defaults for sizing.
+root = Tk() #this is the main window. the parent of all the elements.
+root.geometry("600x400") #set the window's default size.
+style = ttk.Style(root) #bind variable style to root's style.
+style.theme_use('clam') #set root's theme as clam. this creates an off-white look that I liked.
+reader = "" #reader is here and not at the top because this was the first prototype's code, if it ain't broke don't fix it lol
+root.title("pyDex") #set the title
+pathvalue = ttk.Entry(root) #create an entry object. from here on out all objects have root as the parent of the object.
+pathvalue.insert(0, "Enter a filepath...") #set the default text for entry.
+trigger1 = ttk.Button(root, text="scan directory", command=lambda:read(pathvalue.get())) #a button which when triggered reads the entry above.
+kill = ttk.Button(root, text="Exit program",command=root.destroy) #a button which 
 filebar = ttk.Scrollbar(root)
 filepathlabel = ttk.Label(root, text="",wraplength=200)
-backbtn = ttk.Button(root, text="Back", command=lambda:back(reader)) #lambdas are used to signify a delay in python's function calling, specifically the called function bound to this button.
-filelist = Listbox(root, yscrollcommand=filebar.set, width=50, height=1,exportselection=False)
+backbtn = ttk.Button(root, text="Back", command=lambda:back(reader)) 
+#lambdas are used to signify a delay in python's function calling, specifically the called function bound to this button.
+#long story short when python sees a function with parentheses it will run it regardless of whether the user has clicked the button or not.
+filelist = Listbox(root, yscrollcommand=filebar.set, width=50, height=1,exportselection=False) #the filelist. it displays files.
+filelist.bind("<Double-Button-1>",doubleselect) #bind double left mouse clicking to doubleselect.
+#these functions dont need parentheses because they use globals and the only parameter that tkinter passes is what triggered the function.
+#notice how all functions bound to objects using .bind methods have an unused "event" parameter defined in the function.
+filelist.bind("<Button-3>",optionselect) 
+pathvalue.bind("<Button-1>",entrysoftflag)
 filelist.bind("<Double-Button-1>",doubleselect)
 filelist.bind("<Button-3>",optionselect)
-pathvalue.bind("<Button-1>",entrysoftflag)
+filelist.bind("<Button-1>",optionhide)
 
-
+#default entries and definitions for the optionlist.
 optionlist = Listbox(root)
 optionlist.insert(END, "Open")
 optionlist.insert(END, "Cut")
@@ -432,7 +452,11 @@ optionlist.insert(END, "Move to...")
 optionlist.insert(END, "Copy to...")
 optionlist.insert(END, "Rename")
 optionlist.insert(END, "Delete")
+optionlist.bind('<Double-Button-1>', actionselect)
 
+#below are all the input windows for options, defined in tkinter as Toplevels. Objects in the toplevel are parented to the toplevel
+#and not the root. All of them use similar commands above to define parameters and once created, immediately withdraws the window 
+#by default.
 
 renamewindow = Toplevel(root)
 renamewindow.title("Rename file")
@@ -475,118 +499,90 @@ deletebuttonno = ttk.Button(deletewindow, text="No", command=deletewindow.withdr
 deletewindow.withdraw()
 
 #TKINTER ELEMENT PROCESSES
-optionlist.bind('<Double-Button-1>', actionselect)
-filelist.bind("<Double-Button-1>",doubleselect)
-filelist.bind("<Button-3>",optionselect)
-filelist.bind("<Button-1>",optionhide)
+
 
 #FUNCTIONS BELOW
 def exitcatcher(): #A KILL CATCH DESIGNED TO CLOSE ALL WORKING THREADS BEFORE EXITING
     print("goodbye world...")
+#there's a story behind this, originally I thought it was a good idea to index the ENTIRE computer, so i was intending to use this to
+#close a subprocess which would index the entire computer in the background. This was removed because there is LITERALLY NO REASON
+#to index everything all at once. What was left was this, which I thought was a good feature to leave behind because it shows up
+#whenever I closed it and was funny. long story short i am not removing it lol.
 
+#below is all the important, foundational functions of this script, which includes underlying functions such as read, back, and search.
 
-def back(target):
+def back(event): #goes back up the filetree by stepping back to the roots of the directory it is in.
     global reader, toggle
-    optionlist.pack_forget()
-    toggle = 0
+    optionlist.pack_forget() #hide the optionlist if it was open.
+    toggle = 0 #tell other functions that optionlist is hidden.
     print(reader)
-    if system == "Linux":
-        if reader == "/":
+    if system == "Linux": #linux and windows have different roots, the former starting at / and latter starting at c:/ or C:/.
+        if reader == "/": #there is no directory above / for linux.
+            print("You are already at the first directory!")
+        else: #we are not at the highest directory? ok!
+            compile = reader[:reader.rindex("/")] #slice the end of the path, all the way to the last occurence of /.
+            compile = compile[:(compile.rindex("/"))+1] #also get rid of the /.
+            read(compile) #and finally show it to the user
+    elif system == "Windows": #self explanatory.
+        if reader == "C:/" or reader == "c:/": #self explanatory and same as previous if statement.
             print("You are already at the first directory!")
         else:
-            compile = reader[:reader.rindex("/")]
-            compile = compile[:(compile.rindex("/"))+1]
-            read(compile)
-    elif system == "Windows":
-        if reader == "C:/" or reader == "c:/":
-            print("You are already at the first directory!")
-        else:
-            compile = reader[:reader.rindex("/")]
-            compile = compile[:(compile.rindex("/"))+1]
-            read(compile)
+            compile = reader[:reader.rindex("/")] #windows and linux are great because they use the same filesystem.
+            compile = compile[:(compile.rindex("/"))+1] #idk about mac because i was never rich enough to afford a mac lol.
+            read(compile) #same thing.
 
-def search(path, starget):
-    searchlist = []
-    sdirlist = []
-    for(roots,dirs,files) in os.walk(path, topdown=True):
+def search(path, starget): #an internal function which uses os.walk to search a path for a target and return true if found.
+    searchlist = [] #a general compile list for files walked, however initially separated from directories because they need prefixes added.
+    sdirlist = [] #the compile list for directories. see the line above.
+    for(roots,dirs,files) in os.walk(path, topdown=True): 
+        #the important part of this program, walks a path from the top-down and returns a triple tuple containing lists of the names mentioned
+        #above.
         searchlist = files
-        for dir in dirs:
-            sdirlist.append(dir+"/")
-        dirs[:] = []
-    searchlist = sdirlist + searchlist
-    if starget in searchlist:
-        return True
+        for dir in dirs: #need another for loop to add a slash to the end of every directory, then storing them in sdirlist.
+            sdirlist.append(dir+"/") #yeah.
+        dirs[:] = [] #os.walk is recursive and will walk EVERY directory in your path. Stop it from doing that by emptying the "dir" list from the triple tuple.
+    searchlist = sdirlist + searchlist #and finally combine all the files and directories together.
+    if starget in searchlist: #check if the target is in the list.
+        return True #YES!
     else:
-        return False
+        return False #NO!
 
-def read(target):
-    global reader, dirlist, toggle
-    optionlist.pack_forget()
-    toggle = 0
-    dirlist = []
-    for(roots,dirs,files) in os.walk(target, topdown=True):
-        #exec(roots=dirs+files)
-        reader = roots
-        variable = {}
+def read(target): #THE FOUNDATIONAL FUNCTION! reads a target path using os.walk and displays it in a neat little sorted list.
+    global reader, dirlist, toggle #I AM THE GLOBALS!!!!
+    optionlist.pack_forget() #oh yeah close the optionlist if its open
+    toggle = 0 #and tell others
+    dirlist = [] #keep a list of what you have walked, like a list version of the entries to filelist (listbox).
+    for(roots,dirs,files) in os.walk(target, topdown=True): #i love this function
+        reader = roots #now you know what reader is from, first object in os.walk's triple tuple is a string containing the target's root path.
         print(target)
-        dirhandler = []
-        for dir in dirs:
+        dirhandler = [] #the list used to append all directories with a slash at the end, otherwise, we have no way of telling whether it is a directory or not.
+        for dir in dirs: #the for loop that appends all dirs.
             dirhandler.append(dir+"/")
-            dirlist.append(dir+"/")
-        sort = dirhandler+files
-        sort.sort()
-        if [""] in sort:
+        dirhandler.sort() #sort the dirs alphabetically,
+        files.sort() #sort the files alphabetically,
+        sort = dirhandler+files #AND MERGE THEM!!!
+        if [""] in sort: #error handling... zzz...
             print("Nothing found in directory \""+ roots + "\"!")
-        variable[roots]= sort
         listhandler = sort
-        dirlist += sort
-        #print(dirlist)
-        #print(variable[roots])
-        qcounter = 0
-        filelist.delete(0,END)
-        for dirfiles in listhandler:
-            if qcounter != 0:
+        dirlist = sort
+        qcounter = 0 #a counter for the files that i was intending to use later but forgot about. ill be honest lol
+        filelist.delete(0,END) #delete everything in filelist before adding entries.
+        for dirfiles in listhandler: #and add all the entries using a for loop.
                 filelist.insert(END, dirfiles)
                 qcounter += 1
-            else:
-                filelist.delete(0,END)
-                filelist.insert(END, dirfiles)
-                qcounter += 1
-
         dirs[:] = [] #really important for stopping the neverending train which is os.walk haha
-    try:
+    try: #display the root path.
         filepathlabel.config(text="Current path: "+roots)
     except:
         print("Nothing scanned")
 
-def winadmin():
+def winadmin(): #function which checks if the user is an admin in windows. Linux has no way to check for elevation because it has to be manually elevated.
     try:
         return ctypes.windll.shell32.IsUserAnAdmin()
     except AttributeError:
         return False
 
-atexit.register(exitcatcher)
-
-
-#this entire chunk below is the inital commands run at start, which checks the system platform, 
-#and starts the user at the highest branch of their respective OS.
-print(os.name, platform.system())
-system = platform.system()
-if system == "Windows":
-    read("C:/")
-    import ctypes
-    import psutil
-    #if not winadmin():
-        #ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1) #no this is not a virus this just reruns the code with admin privleges
-        #sys.exit(0)
-    #else:
-        #print("Admin on!")
-
-elif system == "Linux":
-    read("/")
-else:
-    m = input("This project was designed for Windows and Linux support, sorry! Press enter to exit.")
-    sys.exit(0)
+atexit.register(exitcatcher) #tell python to run this function exitcatcher at exit.
 
 #PACKS
 renamewindow.protocol('WM_DELETE_WINDOW', renamewindow.withdraw)
@@ -594,6 +590,7 @@ mkdirwindow.protocol("WM_DELETE_WINDOW", mkdirwindow.withdraw)
 deletewindow.protocol("WM_DELETE_WINDOW", deletewindow.withdraw)
 copytowindow.protocol("WM_DELETE_WINDOW", copytowindow.withdraw)
 movewindow.protocol("WM_DELETE_WINDOW", movewindow.withdraw)
+
 filebar.pack(side = RIGHT, fill=Y)
 filelist.pack(side = RIGHT, fill = BOTH)
 pathvalue.pack()
@@ -604,4 +601,78 @@ kill.pack()
 filepathlabel.pack(side=TOP)
 #CONFIGS
 filebar.config(command=filelist.yview)
+
+def requestadminwin():
+    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1) #no this is not a virus this just reruns the code with admin privleges
+    sys.exit(0)
+
+def requestadminIDEWIN():
+    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
+    root.title("pyDexIDE")
+    root.state("iconic")
+    introwindow.withdraw()
+
+introwindow = Toplevel(root)
+def introwindowclose():
+    introwindow.withdraw()
+    root.deiconify()
+    root.focus_set()
+    introwindow.grab_release()
+
+introwindow.title("pyDex: Admin")
+introwindow.geometry("500x200")
+introlabel = ttk.Label(introwindow, text="Welcome to pydex! In some cases while interacting with pydex you may run into permission errors when using sensitive system functions. 95% of pydex can run regardless, and pydex will warn you if this happens.", wraplength=490, justify=CENTER)
+introlabel2 = ttk.Label(introwindow, text="If you are running this script in an IDE and would like admin permissions, please select \"IDE Mode\" and disregard permission errors.\n\nWould you like to rerun this script with admin?", wraplength=490,justify=CENTER)
+introlabel2alt = ttk.Label(introwindow, text="Since you are on Linux, please rerun the code with sudo permissions if you would like to resolve this.")
+introyesbutton = ttk.Button(introwindow, text="Yes", command=requestadminwin)
+intronobutton = ttk.Button(introwindow, text="No", command=introwindowclose)
+introidebutton = ttk.Button(introwindow, text="IDE Mode", command=requestadminIDEWIN)
+introokbutton = ttk.Button(introwindow, text="I understand", command=introwindowclose)
+introwindow.protocol("WM_DELETE_WINDOW", introwindowclose)
+introwindow.resizable(False,False)
+if system == "Windows":
+    introwindow.columnconfigure(0,weight=1)
+    introwindow.columnconfigure(1,weight=1)
+    introwindow.columnconfigure(2,weight=1)
+else:
+    introwindow.columnconfigure(0,weight=1)
+   
+introwindow.rowconfigure(0, weight=1)
+introwindow.rowconfigure(1,weight=1)
+introwindow.rowconfigure(2,weight=1)
+
+print("Welcome to pydex!")
+if system == "Windows":
+    import ctypes
+    if not winadmin():
+        introwindow.deiconify()
+        introlabel.grid(row=0,column=0,sticky="nsew", padx=5, pady=5, columnspan=3)
+        introlabel2.grid(row=1,column=0,sticky="nsew", padx=5, pady=5, columnspan=3)
+        introyesbutton.grid(row=2,column=0,sticky="nsew", padx=5, pady=5)
+        intronobutton.grid(row=2,column=1,sticky="nsew", padx=5, pady=5)
+        introidebutton.grid(row=2,column=2,sticky="nsew", padx=5, pady=5)
+        introwindow.focus_force()
+        introwindow.grab_set()
+        root.state("iconic")
+    else:
+        introwindow.withdraw()
+        print("Admin on!")
+    read("C:/")
+elif system == "Linux":
+    if os.geteuid() == 0:
+        print("Admin on!")
+        introwindow.withdraw()
+    else:
+        introwindow.deiconify()
+        introlabel.grid(row=0,column=0,sticky="nsew", padx=5, pady=5)
+        introlabel2alt.grid(row=1,column=0,sticky="nsew", padx=5, pady=5)
+        introokbutton.grid(row=2,column=0,sticky="nsew", padx=5, pady=5)
+        introwindow.focus_force()
+        introwindow.grab_set()
+        root.state("iconic")
+    read("/")
+else:
+    m = input("This project was designed for Windows and Linux support, sorry! Press enter to exit.")
+    sys.exit(0)
+
 root.mainloop()
