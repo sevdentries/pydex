@@ -4,6 +4,8 @@ import atexit
 import shutil
 import platform
 import webbrowser 
+import warnings
+import stat
 from tkinter import *
 from tkinter import ttk
 import tkinter as tk
@@ -43,7 +45,7 @@ def doubleselect(event): #redirects double click events to open files or read di
         select = compsel[0] #tkinter provides the user's selection as an index of the file in the list.
         select = (filelist.get(compsel[0])) #this uses the index and calls tkinter for the filename with the selected index compsel[0].
     except IndexError:
-        print("No file selected!") #filelist.curselection returns a list from tkinter with what the user has selected in the filelist, if the list is empty the user didn't select anything
+        warnings.warn("No file selected!") #filelist.curselection returns a list from tkinter with what the user has selected in the filelist, if the list is empty the user didn't select anything
 
     if not reader.endswith("/"): #directories are still read if they are missing the / at the end but it breaks my code so ill add it jic
         reader += "/"
@@ -140,15 +142,20 @@ def proccopy(): #copy a selected file/directory
     root.update() #this function fundamentally is the same as cut except gives a different set of special chars to separate the two functions
 
 def procdelete(): #delete a file or directory
-    try: #lots of error handling cases from here on out cuz deleting stuff usually needs permission
-        os.remove(filecompile)
-        print("File at "+filecompile+" has been deleted!")
-        read(reader) #of course need to reread the filelist if we remove a file in it
-        deletewindow.withdraw() #and close the confirmation window.
-    except PermissionError:
-        print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.") #self explanatory.
-        deletewindow.withdraw()
-    except IsADirectoryError: #os.remove does not work for directories, need a recursive delete function instead.
+
+    if not os.path.isdir(filecompile):
+
+        try: #lots of error handling cases from here on out cuz deleting stuff usually needs permission
+            #WINDOWS YOU ARE STUPID
+            os.remove(filecompile)
+            print("File at "+filecompile+" has been deleted!")
+            read(reader) #of course need to reread the filelist if we remove a file in it
+            deletewindow.withdraw() #and close the confirmation window.
+        except PermissionError:
+            print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.") #self explanatory.
+            deletewindow.withdraw()
+    #os.remove does not work for directories, need a recursive delete function instead.
+    else:
         try:
             shutil.rmtree(filecompile) #shutil.rmtree does that :))
             print("Directory at "+filecompile+" has been deleted!")
@@ -172,7 +179,7 @@ def procpaste(): #when the user wants to paste from the proccopy/proccut functio
             except FileExistsError:
                 print("ErrorD: Cannot paste to a directory with the same file!") #D just means directory, did this for debugging
             except PermissionError:
-                print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.") #yeah self explanatory
+                print("ErrorD: Permission denied. Maybe try running pydex with sudo/administration permissions for this.") #yeah self explanatory
             except FileNotFoundError:
                 print("Error: Source file was not found!") #so what if the user did something to the source file at the start?
         elif pasteread == "":
@@ -180,17 +187,20 @@ def procpaste(): #when the user wants to paste from the proccopy/proccut functio
         else: #okay so what if the source being pasted was a file and not a directory?
             try:
                 endpath = reader+(pasteread.split("/"))[-1] #we can get the last object this time because there is no slash that splits the end into two.
-                shutil.copy2(pasteread, endpath) #copy2 is a special copy that tries to also copy any special arguments in the source file.
-                print("Pasting: "+pasteread+" to "+reader+"!")
+                if search(reader, (pasteread.split("/"))[-1]):
+                    raise FileExistsError
+                else:
+                    shutil.copy2(pasteread, endpath) #copy2 is a special copy that tries to also copy any special arguments in the source file.
+                    print("Pasting: "+pasteread+" to "+reader+"!")
                 read(reader) #refresh!
             except FileExistsError:
                 print("ErrorF: Cannot paste to a directory with the same file!") #same error handling as directory
-            except PermissionError:
-                print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.") #yeah the same
+            #except PermissionError:
+                #print("ErrorC2: Permission denied. Maybe try running pydex with sudo/administration permissions for this.") #yeah the same
             except FileNotFoundError:
                 print("Error: Source file was not found!") #yeah pretty much the same error handling
-            except:
-                print("Error: Source file matches destination!") #got this special one becauses directory shutil.copytree thinks this case is a FileExistsError.
+            #except:
+                #print("Error: Source file matches destination!") #got this special one becauses directory shutil.copytree thinks this case is a FileExistsError.
 
         root.clipboard_clear()
         root.clipboard_append(clipstore) #returns the stored clipboard to the user and the operation is finished.
@@ -218,11 +228,13 @@ def procpaste(): #when the user wants to paste from the proccopy/proccut functio
             print("Error: Paste is NULL! Ignoring...") #also check if special characters was found but no path was found for the source
         else: #same thing as before except for file and not directory. explanations of the code are in the copy side.
             try:
-                endpath = reader+(pasteread.split("/"))[-1]
-                shutil.copy2(pasteread, endpath)
-                print("Pasting: "+pasteread+" to "+reader+"!")
-                os.remove(pasteread) #not a directory so use file-specific remove.
-                print("Deleted cut file at: "+pasteread+"!")
+                if search(reader, (pasteread.split("/"))[-1]):
+                    raise FileExistsError
+                else:
+                    shutil.copy2(pasteread, endpath) #copy2 is a special copy that tries to also copy any special arguments in the source file.
+                    print("Pasting: "+pasteread+" to "+reader+"!")
+                    os.remove(pasteread) #not a directory so use file-specific remove.
+                    print("Deleted cut file at: "+pasteread+"!")
                 read(reader)
             except FileExistsError: #error handling, fingers hurt
                 print("ErrorF: Cannot paste to a directory with the same file!")
@@ -299,12 +311,15 @@ def procmove(): #same thing as copy to, makes the user enter a path for the prog
         movewindow.withdraw() #i just noticed that I could have just used one withdraw statement at the end, bruh...
 
 def procmkdir(path): #make a directory
+    global reader
     mkdcompile = path+mkdirentry.get() #only need a precompile of the destination path now.
     if mkdirentry.get() == "": #error handling.
         print("No name entered!")
     else:
         try: #also error handling. zzz...
             os.mkdir(mkdcompile) #make the directory
+            if system == "Windows":
+                os.chmod(mkdcompile, stat.S_IREAD | stat.S_IWRITE)
             read(mkdcompile) #and open the new directory.
         except FileExistsError: #both these except statements are pretty self explanatory...
             print("Error: Directory with the same name already exists!")
@@ -329,10 +344,14 @@ def procopen(selected): #open (by open i mean run) things
         read(selected) #just in case somehow this function gets called for a directory (don't worry doubleselect should catch this)
 
 def procrename():
-    global filecompile,dirlist
+    global filecompile,dirlist,compsel
     print(dirlist)
     dstcompile = reader+renameentry.get()
-    print(filelist.curselection())
+    compsel = filelist.curselection()
+    filename = (filelist.get(compsel[0]))
+    fileprefix = "."+(filename.split("."))[-1]
+    print(fileprefix)
+    
     if renameentry.get() == "":
         print("Error: No name entered!")
     elif dstcompile == filecompile or renameentry.get() in dirlist:
@@ -399,7 +418,7 @@ kill = ttk.Button(root, text="Exit program",command=root.destroy)
 filebar = ttk.Scrollbar(root)
 filepathlabel = ttk.Label(root, text="",wraplength=200)
 backbtn = ttk.Button(root, text="Back", command=lambda:back(reader)) #lambdas are used to signify a delay in python's function calling, specifically the called function bound to this button.
-filelist = Listbox(root, yscrollcommand=filebar.set, width=50, height=1,exportselection=True)
+filelist = Listbox(root, yscrollcommand=filebar.set, width=50, height=1,exportselection=False)
 filelist.bind("<Double-Button-1>",doubleselect)
 filelist.bind("<Button-3>",optionselect)
 pathvalue.bind("<Button-1>",entrysoftflag)
@@ -479,7 +498,7 @@ def back(target):
             compile = compile[:(compile.rindex("/"))+1]
             read(compile)
     elif system == "Windows":
-        if reader == "C:/":
+        if reader == "C:/" or reader == "c:/":
             print("You are already at the first directory!")
         else:
             compile = reader[:reader.rindex("/")]
@@ -540,6 +559,12 @@ def read(target):
     except:
         print("Nothing scanned")
 
+def winadmin():
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except AttributeError:
+        return False
+
 atexit.register(exitcatcher)
 
 
@@ -549,22 +574,26 @@ print(os.name, platform.system())
 system = platform.system()
 if system == "Windows":
     read("C:/")
+    import ctypes
+    import psutil
+    #if not winadmin():
+        #ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1) #no this is not a virus this just reruns the code with admin privleges
+        #sys.exit(0)
+    #else:
+        #print("Admin on!")
+
 elif system == "Linux":
     read("/")
 else:
     m = input("This project was designed for Windows and Linux support, sorry! Press enter to exit.")
     sys.exit(0)
 
-#TKINTER ELEMENTS/DEFINITIONS
-
-
-
 #PACKS
 renamewindow.protocol('WM_DELETE_WINDOW', renamewindow.withdraw)
 mkdirwindow.protocol("WM_DELETE_WINDOW", mkdirwindow.withdraw)
 deletewindow.protocol("WM_DELETE_WINDOW", deletewindow.withdraw)
 copytowindow.protocol("WM_DELETE_WINDOW", copytowindow.withdraw)
-
+movewindow.protocol("WM_DELETE_WINDOW", movewindow.withdraw)
 filebar.pack(side = RIGHT, fill=Y)
 filelist.pack(side = RIGHT, fill = BOTH)
 pathvalue.pack()
@@ -575,5 +604,4 @@ kill.pack()
 filepathlabel.pack(side=TOP)
 #CONFIGS
 filebar.config(command=filelist.yview)
-
 root.mainloop()
