@@ -6,9 +6,13 @@ import platform
 import webbrowser 
 import warnings
 import stat
+import getpass
+import time
+from urllib.request import urlopen
 from tkinter import *
 from tkinter import ttk
 import tkinter as tk
+projectlink = "https://github.com/sevdentries/pydex"
 system = platform.system()
 reader = "" #A global tracker to store the current directory being read.
 toggle = 1 #A simple toggle flag for showing/hiding the option panel.
@@ -18,24 +22,25 @@ dirlist = []
 filelistflag = 0 #A flag which is raised when a person decides to open options for the entire directory instead of a specific file
 clipstore = "" #A storage variable for the user's previous clipboard store, used for cut/copy/paste.
 entryflag = 0
+user = getpass.getuser()
 
 def optionshow(event): #command for showing the optionlist. the other two functions below are also self explanatory.
     global toggle
     toggle = 1
-    optionlist.pack()
+    optionlist.grid()
 
 def optiontoggle(event): #togglescript to show/hide the option panel.
     global toggle
     if toggle == 1:
-        optionlist.pack_forget()
+        optionlist.grid_remove()
         toggle = 0
     elif toggle == 0:
-        optionlist.pack()
+        optionlist.grid()
         toggle = 1
 
 def optionhide(event): #command for hiding the optionlist.
     global toggle
-    optionlist.pack_forget()
+    optionlist.grid_remove()
     toggle = 0
 
 def doubleselect(event): #redirects double click events to open files or read directories
@@ -409,36 +414,56 @@ def optionselect(event):
         optionlist.insert(END, "Paste")
     optionshow(event) #and show the optionlist.
 
-def entrysoftflag(event):
-    global entryflag
-    if entryflag == 0:
-        pathvalue.delete(0,tk.END)
-        entryflag = 1
         
 
 #ROOT BELOW
 #These elements are the definitions of the elements. optionlist starts with defaults for sizing.
 root = Tk() #this is the main window. the parent of all the elements.
-root.geometry("600x400") #set the window's default size.
+root.geometry("600x400+100+100") #set the main window's default size.
+root.minsize(600,400)  #set the main window's minimum size.
+
 style = ttk.Style(root) #bind variable style to root's style.
 style.theme_use('clam') #set root's theme as clam. this creates an off-white look that I liked.
+root.rowconfigure(0, weight=1)
+root.rowconfigure(1, weight=1)
+root.rowconfigure(2, weight=1)
+root.rowconfigure(3, weight=1)
+root.rowconfigure(4, weight=1)
+root.rowconfigure(5, weight=1)
+root.rowconfigure(6, weight=1)
+root.rowconfigure(7, weight=1)
+root.rowconfigure(8, weight=1)
+root.rowconfigure(9, weight=1)
+root.rowconfigure(10, weight=1)
+root.rowconfigure(11, weight=1)
+root.columnconfigure(0, weight=1)
+root.columnconfigure(1, weight=1)
+root.columnconfigure(2, weight=1)
+root.columnconfigure(3, weight=1)
+root.columnconfigure(4, weight=1)
+root.columnconfigure(5, weight=1)
+root.columnconfigure(6, weight=1)
+root.columnconfigure(7, weight=1)
+root.columnconfigure(8, weight=1)
+root.columnconfigure(9, weight=1)
+root.grid_propagate(FALSE)
+
+
 reader = "" #reader is here and not at the top because this was the first prototype's code, if it ain't broke don't fix it lol
 root.title("pyDex") #set the title
 pathvalue = ttk.Entry(root) #create an entry object. from here on out all objects have root as the parent of the object.
 pathvalue.insert(0, "Enter a filepath...") #set the default text for entry.
-trigger1 = ttk.Button(root, text="scan directory", command=lambda:read(pathvalue.get())) #a button which when triggered reads the entry above.
-kill = ttk.Button(root, text="Exit program",command=root.destroy) #a button which 
+trigger1 = ttk.Button(root, text="Go", command=lambda:read(pathvalue.get())) #a button which when triggered reads the entry above.
 filebar = ttk.Scrollbar(root)
 filepathlabel = ttk.Label(root, text="",wraplength=200)
-backbtn = ttk.Button(root, text="Back", command=lambda:back(reader)) 
+backbtn = ttk.Button(root, text="<--", command=lambda:back(reader)) 
 #lambdas are used to signify a delay in python's function calling, specifically the called function bound to this button.
 #long story short when python sees a function with parentheses it will run it regardless of whether the user has clicked the button or not.
-filelist = Listbox(root, yscrollcommand=filebar.set, width=50, height=1,exportselection=False) #the filelist. it displays files.
+filelist = Listbox(root, yscrollcommand=filebar.set,exportselection=False) #the filelist. it displays files.
 filelist.bind("<Double-Button-1>",doubleselect) #bind double left mouse clicking to doubleselect.
 #these functions dont need parentheses because they use globals and the only parameter that tkinter passes is what triggered the function.
 #notice how all functions bound to objects using .bind methods have an unused "event" parameter defined in the function.
 filelist.bind("<Button-3>",optionselect) 
-pathvalue.bind("<Button-1>",entrysoftflag)
 filelist.bind("<Double-Button-1>",doubleselect)
 filelist.bind("<Button-3>",optionselect)
 filelist.bind("<Button-1>",optionhide)
@@ -513,7 +538,7 @@ def exitcatcher(): #A KILL CATCH DESIGNED TO CLOSE ALL WORKING THREADS BEFORE EX
 
 def back(event): #goes back up the filetree by stepping back to the roots of the directory it is in.
     global reader, toggle
-    optionlist.pack_forget() #hide the optionlist if it was open.
+    optionlist.grid_remove() #hide the optionlist if it was open.
     toggle = 0 #tell other functions that optionlist is hidden.
     print(reader)
     if system == "Linux": #linux and windows have different roots, the former starting at / and latter starting at c:/ or C:/.
@@ -549,7 +574,7 @@ def search(path, starget): #an internal function which uses os.walk to search a 
 
 def read(target): #THE FOUNDATIONAL FUNCTION! reads a target path using os.walk and displays it in a neat little sorted list.
     global reader, dirlist, toggle #I AM THE GLOBALS!!!!
-    optionlist.pack_forget() #oh yeah close the optionlist if its open
+    optionlist.grid_remove() #oh yeah close the optionlist if its open
     toggle = 0 #and tell others
     dirlist = [] #keep a list of what you have walked, like a list version of the entries to filelist (listbox).
     for(roots,dirs,files) in os.walk(target, topdown=True): #i love this function
@@ -573,8 +598,11 @@ def read(target): #THE FOUNDATIONAL FUNCTION! reads a target path using os.walk 
         dirs[:] = [] #really important for stopping the neverending train which is os.walk haha
     try: #display the root path.
         filepathlabel.config(text="Current path: "+roots)
+        
     except:
         print("Nothing scanned")
+    pathvalue.delete(0,END)
+    pathvalue.insert(0,roots)
 
 def winadmin(): #function which checks if the user is an admin in windows. Linux has no way to check for elevation because it has to be manually elevated.
     try:
@@ -591,15 +619,61 @@ deletewindow.protocol("WM_DELETE_WINDOW", deletewindow.withdraw)
 copytowindow.protocol("WM_DELETE_WINDOW", copytowindow.withdraw)
 movewindow.protocol("WM_DELETE_WINDOW", movewindow.withdraw)
 
-filebar.pack(side = RIGHT, fill=Y)
-filelist.pack(side = RIGHT, fill = BOTH)
-pathvalue.pack()
-trigger1.pack()
-backbtn.pack()
-kill.pack()
-#test.pack()
-filepathlabel.pack(side=TOP)
+
+#logos below
+logolink = "https://raw.githubusercontent.com/sevdentries/pydex/refs/heads/main/%5BpyDex%5D.png"
+try:
+    with urlopen(logolink) as image:
+        imgdata = image.read()
+except Exception as lerror:
+    print("Fetch logo failed: "+lerror)
+img = PhotoImage(data=imgdata)
+smallerimg = img.subsample(4,4)
+logolabel = Label(root, image=smallerimg)
+logolabel.bind("<Button-1>",lambda event:webbrowser.open(projectlink))
+
+shortlogo = "https://raw.githubusercontent.com/sevdentries/pydex/refs/heads/main/%5BpD%5D.png"
+try:
+    with urlopen(logolink) as icimg:
+        iconimg = icimg.read()
+except Exception as ierror:
+    print("Fetch logo failed: "+ierror)
+iconlogo = PhotoImage(data=iconimg)
+root.iconphoto(True, iconlogo)
+
+#adding time, date, and greeting
+
+def dateupdate():
+    gtime = time.strftime("%H:%M:%S\n%b %d, %Y",time.localtime())
+    glabeltime.config(text=gtime)
+    root.after(1000, dateupdate)
+
+gwindow = Frame(root)
+usergreet = Label(gwindow,text="/welcome, "+user+"/", font=("Helvetica", 14, "bold", "italic"))
+gtime = time.strftime("%H:%M:%S\n%b %d, %Y",time.localtime())
+glabeltime = Label(gwindow,text=gtime, font=("Helvetica", 12, "bold"))
+usergreet.pack()
+glabeltime.pack()
+gwindow.grid(row=1,column=0, sticky="nsew", rowspan=1,columnspan=2)
+dateupdate()
+
+#grid adjustments
+
+filebar.grid(row=1, column=9, sticky="nsew", padx=0, pady=5)
+filelist.grid(row=1, column=2, sticky="nsew", padx=5, pady=5,rowspan=10,columnspan=9)
+pathvalue.grid(row=0,column=3, sticky="nsew", padx=5, pady=5, columnspan=6,rowspan=1)
+trigger1.grid(row=0,column=9, sticky="nsew", padx=5, pady=5,rowspan=1,columnspan=1)
+backbtn.grid(row=0,column=2, sticky="nsew", padx=5, pady=5,rowspan=1,columnspan=1)
+logolabel.grid(row=0,column=0,sticky="nsew",padx=5,pady=5, rowspan=1,columnspan=2)
+optionlist.grid(row=2,column=0,sticky="nsew", padx=5, pady=5,rowspan=7,columnspan=2)
+optionlist.grid_remove()
+
+
+
+#filepathlabel.pack(side=TOP)
+
 #CONFIGS
+
 filebar.config(command=filelist.yview)
 
 def requestadminwin():
@@ -613,17 +687,25 @@ def requestadminIDEWIN():
     introwindow.withdraw()
 
 introwindow = Toplevel(root)
-def introwindowclose():
+def introwindowclose(): #extra code that needs to be run when the user acknowledges the introwindow.
     introwindow.withdraw()
-    root.deiconify()
-    root.focus_set()
     introwindow.grab_release()
+    def delay4linux():
+        root.deiconify()
+        root.lift()
+        root.focus_set()
+        if system == "Linux":
+            root.focus_force()
+            root.attributes("-topmost", True)
+            root.attributes("-topmost", False)
+    root.after(500,delay4linux)
+    
 
 introwindow.title("pyDex: Admin")
-introwindow.geometry("500x200")
-introlabel = ttk.Label(introwindow, text="Welcome to pydex! In some cases while interacting with pydex you may run into permission errors when using sensitive system functions. 95% of pydex can run regardless, and pydex will warn you if this happens.", wraplength=490, justify=CENTER)
+introwindow.geometry("500x200+100+100")
+introlabel = ttk.Label(introwindow, text="Welcome to pydex! In some cases while interacting with pydex you may run into permission errors when using sensitive system functions. 95% of pydex can run regardless, and pydex will warn you if this happens.", wraplength=485, justify=CENTER)
 introlabel2 = ttk.Label(introwindow, text="If you are running this script in an IDE and would like admin permissions, please select \"IDE Mode\" and disregard permission errors.\n\nWould you like to rerun this script with admin?", wraplength=490,justify=CENTER)
-introlabel2alt = ttk.Label(introwindow, text="Since you are on Linux, please rerun the code with sudo permissions if you would like to resolve this.")
+introlabel2alt = ttk.Label(introwindow, text="Since you are on Linux, please rerun the code with sudo permissions if you would like to resolve this.",wraplength=490, justify=CENTER)
 introyesbutton = ttk.Button(introwindow, text="Yes", command=requestadminwin)
 intronobutton = ttk.Button(introwindow, text="No", command=introwindowclose)
 introidebutton = ttk.Button(introwindow, text="IDE Mode", command=requestadminIDEWIN)
@@ -641,10 +723,12 @@ introwindow.rowconfigure(0, weight=1)
 introwindow.rowconfigure(1,weight=1)
 introwindow.rowconfigure(2,weight=1)
 
+bypass = False
+
 print("Welcome to pydex!")
 if system == "Windows":
     import ctypes
-    if not winadmin():
+    if not winadmin() and bypass == False:
         introwindow.deiconify()
         introlabel.grid(row=0,column=0,sticky="nsew", padx=5, pady=5, columnspan=3)
         introlabel2.grid(row=1,column=0,sticky="nsew", padx=5, pady=5, columnspan=3)
@@ -659,7 +743,7 @@ if system == "Windows":
         print("Admin on!")
     read("C:/")
 elif system == "Linux":
-    if os.geteuid() == 0:
+    if os.geteuid() == 0 or bypass == True:
         print("Admin on!")
         introwindow.withdraw()
     else:
@@ -669,7 +753,7 @@ elif system == "Linux":
         introokbutton.grid(row=2,column=0,sticky="nsew", padx=5, pady=5)
         introwindow.focus_force()
         introwindow.grab_set()
-        root.state("iconic")
+        root.withdraw()
     read("/")
 else:
     m = input("This project was designed for Windows and Linux support, sorry! Press enter to exit.")
