@@ -419,6 +419,7 @@ def optionselect(event):
 #ROOT BELOW
 #These elements are the definitions of the elements. optionlist starts with defaults for sizing.
 root = Tk() #this is the main window. the parent of all the elements.
+root.configure(bg="#0c0c0c")
 root.geometry("600x400+100+100") #set the main window's default size.
 root.minsize(600,400)  #set the main window's minimum size.
 
@@ -451,12 +452,12 @@ root.grid_propagate(FALSE)
 
 reader = "" #reader is here and not at the top because this was the first prototype's code, if it ain't broke don't fix it lol
 root.title("pyDex") #set the title
-pathvalue = ttk.Entry(root) #create an entry object. from here on out all objects have root as the parent of the object.
+pathvalue = tk.Entry(root) #create an entry object. from here on out all objects have root as the parent of the object.
 pathvalue.insert(0, "Enter a filepath...") #set the default text for entry.
-trigger1 = ttk.Button(root, text="Go", command=lambda:read(pathvalue.get())) #a button which when triggered reads the entry above.
-filebar = ttk.Scrollbar(root)
+trigger1 = tk.Button(root, text="Go", command=lambda:read(pathvalue.get())) #a button which when triggered reads the entry above.
+filebar = tk.Scrollbar(root)
 filepathlabel = ttk.Label(root, text="",wraplength=200)
-backbtn = ttk.Button(root, text="<--", command=lambda:back(reader)) 
+backbtn = tk.Button(root, text="<--", command=lambda:back(reader)) 
 #lambdas are used to signify a delay in python's function calling, specifically the called function bound to this button.
 #long story short when python sees a function with parentheses it will run it regardless of whether the user has clicked the button or not.
 filelist = Listbox(root, yscrollcommand=filebar.set,exportselection=False) #the filelist. it displays files.
@@ -601,8 +602,11 @@ def read(target): #THE FOUNDATIONAL FUNCTION! reads a target path using os.walk 
         
     except:
         print("Nothing scanned")
-    pathvalue.delete(0,END)
-    pathvalue.insert(0,roots)
+    try:
+        pathvalue.delete(0,END)
+        pathvalue.insert(0,roots)
+    except UnboundLocalError:
+        pass
 
 def winadmin(): #function which checks if the user is an admin in windows. Linux has no way to check for elevation because it has to be manually elevated.
     try:
@@ -668,6 +672,17 @@ logolabel.grid(row=0,column=0,sticky="nsew",padx=5,pady=5, rowspan=1,columnspan=
 optionlist.grid(row=2,column=0,sticky="nsew", padx=5, pady=5,rowspan=7,columnspan=2)
 optionlist.grid_remove()
 
+#coloring
+
+gwindow.configure(bg="#202020")
+usergreet.configure(bg="#202020",fg="#c0c0c0")
+glabeltime.configure(bg="#202020", fg="#c0c0c0")
+logolabel.configure(bg="#202020")
+filelist.configure(bg="#202020", fg="#c0c0c0")
+optionlist.configure(bg="#202020", fg="#c0c0c0")
+backbtn.configure(bg="#202020", fg="#c0c0c0")
+trigger1.configure(bg="#202020", fg="#c0c0c0")
+pathvalue.configure(bg="#202020", fg="#c0c0c0")
 
 
 #filepathlabel.pack(side=TOP)
