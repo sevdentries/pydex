@@ -9,4 +9,5 @@ There are three main goals driving this project:
 - Usability/Functionality: Be somewhat useful
 - Simplicity: Minimize installscripts, use modules built-in to python
 - Accessibility: Maintain most of the features someone would want from a file explorer (read, edit, rename, delete, copy, etc)
-
+#
+![pydex screenshot](https://github.com/sevdentries/pydex/blob/69c6086c9fc0fdf419ea083f3fec50fe9da4b7b0/pydexclip.png)
