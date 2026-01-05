@@ -1,4 +1,3 @@
-# pydex
 ![pydex logo](https://github.com/sevdentries/pydex/blob/2b83e0be217b685db1aac4add80c510a126f0491/%5BpyDex%5D.png)
 #
 CS11 Final project; a simple file explorer built purely in python and tkinter. 
