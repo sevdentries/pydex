@@ -419,17 +419,16 @@ def optionselect(event):
 #ROOT BELOW
 #These elements are the definitions of the elements. optionlist starts with defaults for sizing.
 root = Tk() #this is the main window. the parent of all the elements.
-root.configure(bg="#0c0c0c")
-root.geometry("600x400+100+100") #set the main window's default size.
+root.geometry("600x400+100+100") #set the main window's default size, and coordinates on the user's default window.
 root.minsize(600,400)  #set the main window's minimum size.
 
 style = ttk.Style(root) #bind variable style to root's style.
 style.theme_use('clam') #set root's theme as clam. this creates an off-white look that I liked.
-root.rowconfigure(0, weight=1)
-root.rowconfigure(1, weight=1)
-root.rowconfigure(2, weight=1)
-root.rowconfigure(3, weight=1)
-root.rowconfigure(4, weight=1)
+root.rowconfigure(0, weight=1) #in order to use tkinter's grid system, you must first define the rows and columns of your window.
+root.rowconfigure(1, weight=1) #tkinter then uses these weights and dimensions to split your window into chunks that you can place your objects in.
+root.rowconfigure(2, weight=1) #its important to mention that object.pack() is different from object.grid(), and you can't use both in the same window.
+root.rowconfigure(3, weight=1) #all you have to know is that pack just arranges objects based on default sizes in order of the packs, while grids
+root.rowconfigure(4, weight=1) #allow you to use rows and columns to arrange your objects.
 root.rowconfigure(5, weight=1)
 root.rowconfigure(6, weight=1)
 root.rowconfigure(7, weight=1)
@@ -447,7 +446,7 @@ root.columnconfigure(6, weight=1)
 root.columnconfigure(7, weight=1)
 root.columnconfigure(8, weight=1)
 root.columnconfigure(9, weight=1)
-root.grid_propagate(FALSE)
+root.grid_propagate(FALSE) #prevent the window from forgetting placements of objects once you hide objects on the window.
 
 
 reader = "" #reader is here and not at the top because this was the first prototype's code, if it ain't broke don't fix it lol
@@ -605,18 +604,23 @@ def read(target): #THE FOUNDATIONAL FUNCTION! reads a target path using os.walk 
     try:
         pathvalue.delete(0,END)
         pathvalue.insert(0,roots)
-    except UnboundLocalError:
-        pass
+    except UnboundLocalError: #if os.walk cannot find the directory, items in the tuple doesn't exist and trying to access it throws UnboundLocalError.
+        pass #i don't put a print statement here because the except statement above also catches os.walk's error.
 
 def winadmin(): #function which checks if the user is an admin in windows. Linux has no way to check for elevation because it has to be manually elevated.
     try:
-        return ctypes.windll.shell32.IsUserAnAdmin()
+        return ctypes.windll.shell32.IsUserAnAdmin() #mostly self-explanatory. dont ask me how ctypes works.
     except AttributeError:
         return False
 
 atexit.register(exitcatcher) #tell python to run this function exitcatcher at exit.
 
 #PACKS
+
+#during regular cases, if the user closes a window or a TopLevel (window on a window) using the x on the top right then tkinter treats this as a 
+#hard window.destroy() call, which makes the program essentially not able to open the window ever again. So this code below sets changes the behaviours
+#of all TopLevels such that clicking the X instead does a softer window.withdraw call which can be recalled for later use.
+
 renamewindow.protocol('WM_DELETE_WINDOW', renamewindow.withdraw)
 mkdirwindow.protocol("WM_DELETE_WINDOW", mkdirwindow.withdraw)
 deletewindow.protocol("WM_DELETE_WINDOW", deletewindow.withdraw)
@@ -625,43 +629,47 @@ movewindow.protocol("WM_DELETE_WINDOW", movewindow.withdraw)
 
 
 #logos below
-logolink = "https://raw.githubusercontent.com/sevdentries/pydex/refs/heads/main/%5BpyDex%5D.png"
+#i wanted my program to be packaged as the whole program, so instead of making the program reference to images inside the folder I decided to for the program
+#to make web requests to the GitHub repository. Yeah I know this assumes that people have internet when using this program but its a reasonable sacrifice.
+logolink = "https://raw.githubusercontent.com/sevdentries/pydex/refs/heads/main/%5BpyDex%5D.png" #self-explanatory
 try:
-    with urlopen(logolink) as image:
-        imgdata = image.read()
-except Exception as lerror:
+    with urlopen(logolink) as image: #uses urllib and opens the contents of the link. The link must lead to the raw image otherwise it won't find anything.
+        imgdata = image.read() #read the contents of the link and spit it out here.
+except Exception as lerror: #if errors happen just forgive and forget.
     print("Fetch logo failed: "+lerror)
-img = PhotoImage(data=imgdata)
-smallerimg = img.subsample(4,4)
-logolabel = Label(root, image=smallerimg)
-logolabel.bind("<Button-1>",lambda event:webbrowser.open(projectlink))
+img = PhotoImage(data=imgdata) #create the tkinter photo object for displaying.
+smallerimg = img.subsample(4,4) #scale the image so that it is 4 times smaller in the x and y scale.
+logolabel = Label(root, image=smallerimg) #put the photoimage in a label object so its easier to fit and pad.
+logolabel.bind("<Button-1>",lambda event:webbrowser.open(projectlink)) #this just maps the logo so that if you click it it will take you to the repository
 
-shortlogo = "https://raw.githubusercontent.com/sevdentries/pydex/refs/heads/main/%5BpD%5D.png"
+shortlogo = "https://raw.githubusercontent.com/sevdentries/pydex/refs/heads/main/%5BpD%5D.png" #same thing but now for program icon
 try:
     with urlopen(logolink) as icimg:
         iconimg = icimg.read()
 except Exception as ierror:
     print("Fetch logo failed: "+ierror)
 iconlogo = PhotoImage(data=iconimg)
-root.iconphoto(True, iconlogo)
+root.iconphoto(True, iconlogo) #except not using label this time you have to define it to be an icon image.
 
 #adding time, date, and greeting
 
-def dateupdate():
-    gtime = time.strftime("%H:%M:%S\n%b %d, %Y",time.localtime())
-    glabeltime.config(text=gtime)
-    root.after(1000, dateupdate)
+def dateupdate(): #a while loop replacement that can run asynchronously with the program. updates every second.
+    gtime = time.strftime("%H:%M:%S\n%b %d, %Y",time.localtime()) #custom format version of time.datetime(), allowing you to change the output string to your choice.
+    glabeltime.config(text=gtime) #output this time string into a label for people to see.
+    root.after(1000, dateupdate) #call this function again after 1000 milliseconds.
 
-gwindow = Frame(root)
-usergreet = Label(gwindow,text="/welcome, "+user+"/", font=("Helvetica", 14, "bold", "italic"))
-gtime = time.strftime("%H:%M:%S\n%b %d, %Y",time.localtime())
+gwindow = Frame(root) #the greeting window which greets the user and shows the time/date.
+usergreet = Label(gwindow,text="/welcome, "+user+"/", font=("Helvetica", 14, "bold", "italic")) #label and font. username fetching using getpass().
+gtime = time.strftime("%H:%M:%S\n%b %d, %Y",time.localtime()) #default label setting for the datetime display/label.
 glabeltime = Label(gwindow,text=gtime, font=("Helvetica", 12, "bold"))
-usergreet.pack()
+usergreet.pack() #since its just 2 labels inside a frame, we don't need to use grid and we can just pack it.
 glabeltime.pack()
-gwindow.grid(row=1,column=0, sticky="nsew", rowspan=1,columnspan=2)
+gwindow.grid(row=1,column=0, sticky="nsew", rowspan=1,columnspan=2) #oh but the frame itself has to be arranged in the explorer window.
 dateupdate()
 
 #grid adjustments
+#because we defined the rows and columns earlier, now we can position objects on the grid to our hearts content.
+#you can also allocate multiple rows to objects using row/columnspan, and force objects to scale to the rows/columns using the sticky attribute.
 
 filebar.grid(row=1, column=9, sticky="nsew", padx=0, pady=5)
 filelist.grid(row=1, column=2, sticky="nsew", padx=5, pady=5,rowspan=10,columnspan=9)
@@ -670,36 +678,42 @@ trigger1.grid(row=0,column=9, sticky="nsew", padx=5, pady=5,rowspan=1,columnspan
 backbtn.grid(row=0,column=2, sticky="nsew", padx=5, pady=5,rowspan=1,columnspan=1)
 logolabel.grid(row=0,column=0,sticky="nsew",padx=5,pady=5, rowspan=1,columnspan=2)
 optionlist.grid(row=2,column=0,sticky="nsew", padx=5, pady=5,rowspan=7,columnspan=2)
-optionlist.grid_remove()
+optionlist.grid_remove() #optionwindow is gridded but we dont need it until the user right clicks so just hide it for now
+
+
 
 #coloring
-
-gwindow.configure(bg="#202020")
-usergreet.configure(bg="#202020",fg="#c0c0c0")
-glabeltime.configure(bg="#202020", fg="#c0c0c0")
-logolabel.configure(bg="#202020")
-filelist.configure(bg="#202020", fg="#c0c0c0")
-optionlist.configure(bg="#202020", fg="#c0c0c0")
-backbtn.configure(bg="#202020", fg="#c0c0c0")
-trigger1.configure(bg="#202020", fg="#c0c0c0")
-pathvalue.configure(bg="#202020", fg="#c0c0c0")
+darkmode = False #small system boolean that controls the coloring.
+if darkmode == True: #self-explanatory, if true color the objects.
+    gwindow.configure(bg="#202020")
+    usergreet.configure(bg="#202020",fg="#c0c0c0")
+    glabeltime.configure(bg="#202020", fg="#c0c0c0")
+    logolabel.configure(bg="#202020")
+    filelist.configure(bg="#202020", fg="#c0c0c0")
+    optionlist.configure(bg="#202020", fg="#c0c0c0")
+    backbtn.configure(bg="#202020", fg="#c0c0c0")
+    trigger1.configure(bg="#202020", fg="#c0c0c0")
+    pathvalue.configure(bg="#202020", fg="#c0c0c0")
+    root.configure(bg="#0c0c0c")
+else: #this is for styling for the light mode, but i didn't add anything just yet.
+    pass
 
 
 #filepathlabel.pack(side=TOP)
 
 #CONFIGS
 
-filebar.config(command=filelist.yview)
+filebar.config(command=filelist.yview) #this binds a filebar to the filelist so that you can scroll and also have the filelist scroll down as well.
 
-def requestadminwin():
+def requestadminwin(): #asks for admin by rerunning the python file in a windows CMD and closing the non-admin version.
     ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1) #no this is not a virus this just reruns the code with admin privleges
     sys.exit(0)
 
-def requestadminIDEWIN():
+def requestadminIDEWIN(): #the previous function won't work in an IDE because the IDE treats all new processes as childs of the old window, so killing the window will kill everything.
     ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
-    root.title("pyDexIDE")
+    root.title("pyDexIDE") #this is just the function above but instead of killing the old window we just hide it for the user to close later.
     root.state("iconic")
-    introwindow.withdraw()
+    introwindow.withdraw() #close the intro window.
 
 introwindow = Toplevel(root)
 def introwindowclose(): #extra code that needs to be run when the user acknowledges the introwindow.
