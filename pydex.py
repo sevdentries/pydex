@@ -695,11 +695,9 @@ if darkmode == True: #self-explanatory, if true color the objects.
     trigger1.configure(bg="#202020", fg="#c0c0c0")
     pathvalue.configure(bg="#202020", fg="#c0c0c0")
     root.configure(bg="#0c0c0c")
-else: #this is for styling for the light mode, but i didn't add anything just yet.
+else: #this is for styling for the light mode, but i haven't added anything just yet.
     pass
 
-
-#filepathlabel.pack(side=TOP)
 
 #CONFIGS
 
@@ -712,26 +710,27 @@ def requestadminwin(): #asks for admin by rerunning the python file in a windows
 def requestadminIDEWIN(): #the previous function won't work in an IDE because the IDE treats all new processes as childs of the old window, so killing the window will kill everything.
     ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
     root.title("pyDexIDE") #this is just the function above but instead of killing the old window we just hide it for the user to close later.
-    root.state("iconic")
+    root.state("iconic") #hide the old window.
     introwindow.withdraw() #close the intro window.
 
-introwindow = Toplevel(root)
-def introwindowclose(): #extra code that needs to be run when the user acknowledges the introwindow.
-    introwindow.withdraw()
-    introwindow.grab_release()
-    def delay4linux():
-        root.deiconify()
-        root.lift()
-        root.focus_set()
-        if system == "Linux":
-            root.focus_force()
-            root.attributes("-topmost", True)
-            root.attributes("-topmost", False)
-    root.after(500,delay4linux)
-    
+introwindow = Toplevel(root) #the info window that shows up if elevated permissions is not detected.
 
+def introwindowclose(): #extra code that needs to be run when the user acknowledges the introwindow.
+    introwindow.withdraw() #close the intro window
+    introwindow.grab_release() #release the focus force which blocked users from interacting with the other window.
+    def delay4linux(): #linux processes the calls order by order but tkinter calls them all at once causing linux to ignore some commands
+        root.deiconify() #show the root window
+        root.lift() #lift the new window to focus
+        root.focus_set() #and reset the focus to the explorer window.
+        if system == "Linux": #extra stuff that dumb linux needs. the delay is fine for windows hence the if statement here.
+            root.focus_force() #force focus to the explorer window.
+            root.attributes("-topmost", True) #toggle topmost attribute to encourage linux to do something
+            root.attributes("-topmost", False)
+    root.after(500,delay4linux) #set a delay to run this function.
+    
+#introwindow objects, modifiers and configuration, most objects are self-explanatory.
 introwindow.title("pyDex: Admin")
-introwindow.geometry("500x200+100+100")
+introwindow.geometry("500x200+100+100") #introwindow scaling and placement
 introlabel = ttk.Label(introwindow, text="Welcome to pydex! In some cases while interacting with pydex you may run into permission errors when using sensitive system functions. 95% of pydex can run regardless, and pydex will warn you if this happens.", wraplength=485, justify=CENTER)
 introlabel2 = ttk.Label(introwindow, text="If you are running this script in an IDE and would like admin permissions, please select \"IDE Mode\" and disregard permission errors.\n\nWould you like to rerun this script with admin?", wraplength=490,justify=CENTER)
 introlabel2alt = ttk.Label(introwindow, text="Since you are on Linux, please rerun the code with sudo permissions if you would like to resolve this.",wraplength=490, justify=CENTER)
@@ -741,7 +740,7 @@ introidebutton = ttk.Button(introwindow, text="IDE Mode", command=requestadminID
 introokbutton = ttk.Button(introwindow, text="I understand", command=introwindowclose)
 introwindow.protocol("WM_DELETE_WINDOW", introwindowclose)
 introwindow.resizable(False,False)
-if system == "Windows":
+if system == "Windows": #windows introwindow has more labels than linux introwindow so windows version gets 3 columns
     introwindow.columnconfigure(0,weight=1)
     introwindow.columnconfigure(1,weight=1)
     introwindow.columnconfigure(2,weight=1)
@@ -752,40 +751,42 @@ introwindow.rowconfigure(0, weight=1)
 introwindow.rowconfigure(1,weight=1)
 introwindow.rowconfigure(2,weight=1)
 
-bypass = False
+bypass = False #its a bypass for the introwindow during debugging
 
-print("Welcome to pydex!")
-if system == "Windows":
+print("Welcome to pydex!") #launch statement 
+if system == "Windows": #this if statement checks for elevated user permissions and if none opens the introwindow for the respective operating system.
     import ctypes
-    if not winadmin() and bypass == False:
-        introwindow.deiconify()
+    if not winadmin() and bypass == False: #conditions for showing introwindows for windows
+        introwindow.deiconify() #more settings im not commenting these
         introlabel.grid(row=0,column=0,sticky="nsew", padx=5, pady=5, columnspan=3)
         introlabel2.grid(row=1,column=0,sticky="nsew", padx=5, pady=5, columnspan=3)
         introyesbutton.grid(row=2,column=0,sticky="nsew", padx=5, pady=5)
         intronobutton.grid(row=2,column=1,sticky="nsew", padx=5, pady=5)
         introidebutton.grid(row=2,column=2,sticky="nsew", padx=5, pady=5)
-        introwindow.focus_force()
-        introwindow.grab_set()
-        root.state("iconic")
-    else:
+        introwindow.focus_force() #force user to only be able to interact with the introwindow
+        introwindow.grab_set() #and focus the window in question
+        root.state("iconic") #minimize the explorer window
+    else: #if admin is detected, dont show the introwindow at all and go straight into explorer
         introwindow.withdraw()
         print("Admin on!")
-    read("C:/")
-elif system == "Linux":
-    if os.geteuid() == 0 or bypass == True:
+    read("C:/") #and finally read the highest level
+elif system == "Linux": #uh huh
+    if os.geteuid() == 0 or bypass == True: #linux version of checking for superuser
         print("Admin on!")
-        introwindow.withdraw()
+        introwindow.withdraw() #if detected also dont show the window at all
     else:
-        introwindow.deiconify()
+        introwindow.deiconify() #otherwise show the introwindow
         introlabel.grid(row=0,column=0,sticky="nsew", padx=5, pady=5)
         introlabel2alt.grid(row=1,column=0,sticky="nsew", padx=5, pady=5)
         introokbutton.grid(row=2,column=0,sticky="nsew", padx=5, pady=5)
         introwindow.focus_force()
         introwindow.grab_set()
         root.withdraw()
-    read("/")
-else:
+    read("/") #and once all of this is done read highest directory of linux
+else: #if the system is not Linux or Windows its rejected
     m = input("This project was designed for Windows and Linux support, sorry! Press enter to exit.")
     sys.exit(0)
 
-root.mainloop()
+root.mainloop() #and this starts the main window loop for tkinter. Every tkinter program must have this.
+
+#the end. my fingers hurt.
