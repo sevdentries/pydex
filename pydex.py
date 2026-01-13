@@ -119,32 +119,42 @@ def actionselect(event): #a redirector of actions selected by users to functions
 def proccut(): #cut a selected file/directory
     global clipstore
     fullpath = filecompile+"[-/cutpydex/-]" #precompile the user's selected path and add a special set of characters for the program to detect
-    if (root.clipboard_get()).endswith("[-/cutpydex/-]") or (root.clipboard_get()).endswith("[-/pydex/-]"):
-        print("Warning: Double exception triggered, ignoring clipstore!") #see if the user has already cut or copy and has not pasted yet
-        root.clipboard_clear()
-        root.clipboard_append(clipstore) #if the user has not pasted, its an exception so maintain what was stored for the user
-        root.update()
-    clipstore = root.clipboard_get() #store the user's original clipboard before overwriting it
-    root.clipboard_clear() #now clear it
-    root.clipboard_append(fullpath) #copy the precompiled string with the special characters for pasting
-    print("stored: "+clipstore)
-    print("copied: "+fullpath)
+    try:
+        if (root.clipboard_get()).endswith("[-/cutpydex/-]") or (root.clipboard_get()).endswith("[-/pydex/-]"):
+            print("Warning: Double exception triggered, ignoring clipstore!") #see if the user has already cut or copy and has not pasted yet
+            root.clipboard_clear()
+            root.clipboard_append(clipstore) #if the user has not pasted, its an exception so maintain what was stored for the user
+            root.update()
+        clipstore = root.clipboard_get() #store the user's original clipboard before overwriting it
+        root.clipboard_clear() #now clear it
+        root.clipboard_append(fullpath) #copy the precompiled string with the special characters for pasting
+        print("stored: "+clipstore)
+        print("copied: "+fullpath)
+    except TclError:
+        print("Clipboard not found!")
+        root.clipboard_append(fullpath)
+        print("copied: "+fullpath)
     root.update() #make sure tkinter actually copies the stuff
 
 
 def proccopy(): #copy a selected file/directory
     global clipstore
     fullpath = filecompile+"[-/pydex/-]" #precompile the user's selected path and add a special set of characters for the program to detect
-    if (root.clipboard_get()).endswith("[-/cutpydex/-]") or (root.clipboard_get()).endswith("[-/pydex/-]"):
-        print("Warning: Double exception triggered, ignoring clipstore!") #see if the user has already cut or copy and has not pasted yet
+    try:
+        if (root.clipboard_get()).endswith("[-/cutpydex/-]") or (root.clipboard_get()).endswith("[-/pydex/-]"):
+            print("Warning: Double exception triggered, ignoring clipstore!") #see if the user has already cut or copy and has not pasted yet
+            root.clipboard_clear()
+            root.clipboard_append(clipstore) #if the user has not pasted, its an exception so maintain what was stored for the user
+            root.update()
+        clipstore = root.clipboard_get()
         root.clipboard_clear()
-        root.clipboard_append(clipstore) #if the user has not pasted, its an exception so maintain what was stored for the user
-        root.update()
-    clipstore = root.clipboard_get()
-    root.clipboard_clear()
-    root.clipboard_append(fullpath)
-    print("stored: "+clipstore)
-    print("copied: "+fullpath)
+        root.clipboard_append(fullpath)
+        print("stored: "+clipstore)
+        print("copied: "+fullpath)
+    except TclError:
+        print("Clipboard not found!")
+        root.clipboard_append(fullpath)
+        print("copied: "+fullpath)
     root.update() #this function fundamentally is the same as cut except gives a different set of special chars to separate the two functions
 
 def procdelete(): #delete a file or directory
