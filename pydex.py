@@ -649,7 +649,7 @@ logolabel.bind("<Button-1>",lambda event:webbrowser.open(projectlink)) #this jus
 
 shortlogo = "https://raw.githubusercontent.com/sevdentries/pydex/refs/heads/main/%5BpD%5D.png" #same thing but now for program icon
 try:
-    with urlopen(logolink) as icimg:
+    with urlopen(shortlogo) as icimg:
         iconimg = icimg.read()
 except Exception as ierror:
     print("Fetch logo failed: "+ierror)
