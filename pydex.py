@@ -173,90 +173,95 @@ def procdelete(): #delete a file or directory
 
 def procpaste(): #when the user wants to paste from the proccopy/proccut function
     global clipstore #getting old clipboard to return it after this program
-    pasteread = root.clipboard_get() #get the characters in the clipboard
-    if pasteread.endswith("[-/pydex/-]"): #check for the special characters from copy
-        pasteread = pasteread.replace("[-/pydex/-]","") #strip the characters if it exists
-        if pasteread.endswith("/"): #check if the copy is a directory
-            endpath = reader+(pasteread.split("/"))[-2] + "/" #get ONLY the name of the directory by splitting at every slash and getting the second last object.
-            try: #btw endpath is a precompile of the "destination" of where the user wants to paste it along with the directory name.
-                shutil.copytree(pasteread,endpath) #copy the entire directory recursively to endpath.
-                print("Pasting: "+pasteread+" to "+reader+"!")
-                read(reader) #and refresh the filelist to see the new directory.
-            except FileExistsError:
-                print("ErrorD: Cannot paste to a directory with the same file!") #D just means directory, did this for debugging
-            except PermissionError:
-                print("ErrorD: Permission denied. Maybe try running pydex with sudo/administration permissions for this.") #yeah self explanatory
-            except FileNotFoundError:
-                print("Error: Source file was not found!") #so what if the user did something to the source file at the start?
-        elif pasteread == "":
-            print("Error: Paste is NULL! Ignoring...") #If paste prefix was found but no path was found.
-        else: #okay so what if the source being pasted was a file and not a directory?
-            try:
-                endpath = reader+(pasteread.split("/"))[-1] #we can get the last object this time because there is no slash that splits the end into two.
-                if search(reader, (pasteread.split("/"))[-1]):
-                    raise FileExistsError
-                else:
-                    shutil.copy2(pasteread, endpath) #copy2 is a special copy that tries to also copy any special arguments in the source file.
+    try:
+        pasteread = root.clipboard_get() #get the characters in the clipboard
+        if pasteread.endswith("[-/pydex/-]"): #check for the special characters from copy
+            pasteread = pasteread.replace("[-/pydex/-]","") #strip the characters if it exists
+            if pasteread.endswith("/"): #check if the copy is a directory
+                endpath = reader+(pasteread.split("/"))[-2] + "/" #get ONLY the name of the directory by splitting at every slash and getting the second last object.
+                try: #btw endpath is a precompile of the "destination" of where the user wants to paste it along with the directory name.
+                    shutil.copytree(pasteread,endpath) #copy the entire directory recursively to endpath.
                     print("Pasting: "+pasteread+" to "+reader+"!")
-                read(reader) #refresh!
-            except FileExistsError:
-                print("ErrorF: Cannot paste to a directory with the same file!") #same error handling as directory
-            #except PermissionError:
-                #print("ErrorC2: Permission denied. Maybe try running pydex with sudo/administration permissions for this.") #yeah the same
-            except FileNotFoundError:
-                print("Error: Source file was not found!") #yeah pretty much the same error handling
-            #except:
-                #print("Error: Source file matches destination!") #got this special one becauses directory shutil.copytree thinks this case is a FileExistsError.
+                    read(reader) #and refresh the filelist to see the new directory.
+                except FileExistsError:
+                    print("ErrorD: Cannot paste to a directory with the same file!") #D just means directory, did this for debugging
+                except PermissionError:
+                    print("ErrorD: Permission denied. Maybe try running pydex with sudo/administration permissions for this.") #yeah self explanatory
+                except FileNotFoundError:
+                    print("Error: Source file was not found!") #so what if the user did something to the source file at the start?
+            elif pasteread == "":
+                print("Error: Paste is NULL! Ignoring...") #If paste prefix was found but no path was found.
+            else: #okay so what if the source being pasted was a file and not a directory?
+                try:
+                    endpath = reader+(pasteread.split("/"))[-1] #we can get the last object this time because there is no slash that splits the end into two.
+                    if search(reader, (pasteread.split("/"))[-1]):
+                        raise FileExistsError
+                    else:
+                        shutil.copy2(pasteread, endpath) #copy2 is a special copy that tries to also copy any special arguments in the source file.
+                        print("Pasting: "+pasteread+" to "+reader+"!")
+                    read(reader) #refresh!
+                except FileExistsError:
+                    print("ErrorF: Cannot paste to a directory with the same file!") #same error handling as directory
+                #except PermissionError:
+                    #print("ErrorC2: Permission denied. Maybe try running pydex with sudo/administration permissions for this.") #yeah the same
+                except FileNotFoundError:
+                    print("Error: Source file was not found!") #yeah pretty much the same error handling
+                #except:
+                    #print("Error: Source file matches destination!") #got this special one becauses directory shutil.copytree thinks this case is a FileExistsError.
 
-        root.clipboard_clear()
-        root.clipboard_append(clipstore) #returns the stored clipboard to the user and the operation is finished.
-        print("recopied: "+clipstore)
-        root.update() #make sure tkinter actually does the clipboard stuff
+            root.clipboard_clear()
+            root.clipboard_append(clipstore) #returns the stored clipboard to the user and the operation is finished.
+            print("recopied: "+clipstore)
+            root.update() #make sure tkinter actually does the clipboard stuff
 
-    elif pasteread.endswith("[-/cutpydex/-]"): #okay so all the stuff above was just for copy, cut is mostly the same except we delete the source directory/file
-        pasteread = pasteread.replace("[-/cutpydex/-]","") #also strip the special characters...
-        if pasteread.endswith("/"): #my fingers hurt writing these comments, check if its directory
-            endpath = reader+(pasteread.split("/"))[-2] + "/" #assemble destination filepath with same method as copy
-            try:
-                shutil.copytree(pasteread,endpath) #yeah its the same 
-                print("Pasting: "+pasteread+" to "+reader+"!")
-                shutil.rmtree(pasteread) #but we remove the source directory at the end!
-                print("Deleted cut directory at: "+pasteread+"!")
-                read(reader) #refresh!
-            except FileExistsError: #SAME ERROR HANDLING FINGERS HURT
-                print("ErrorD: Cannot paste to a directory with the same file!")
-            except PermissionError:
-                print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.")
-            except FileNotFoundError:
-                print("Error: Source file was not found!")
-
-        elif pasteread == "":
-            print("Error: Paste is NULL! Ignoring...") #also check if special characters was found but no path was found for the source
-        else: #same thing as before except for file and not directory. explanations of the code are in the copy side.
-            try:
-                if search(reader, (pasteread.split("/"))[-1]):
-                    raise FileExistsError
-                else:
-                    shutil.copy2(pasteread, endpath) #copy2 is a special copy that tries to also copy any special arguments in the source file.
+        elif pasteread.endswith("[-/cutpydex/-]"): #okay so all the stuff above was just for copy, cut is mostly the same except we delete the source directory/file
+            pasteread = pasteread.replace("[-/cutpydex/-]","") #also strip the special characters...
+            if pasteread.endswith("/"): #my fingers hurt writing these comments, check if its directory
+                endpath = reader+(pasteread.split("/"))[-2] + "/" #assemble destination filepath with same method as copy
+                try:
+                    shutil.copytree(pasteread,endpath) #yeah its the same 
                     print("Pasting: "+pasteread+" to "+reader+"!")
-                    os.remove(pasteread) #not a directory so use file-specific remove.
-                    print("Deleted cut file at: "+pasteread+"!")
-                read(reader)
-            except FileExistsError: #error handling, fingers hurt
-                print("ErrorF: Cannot paste to a directory with the same file!")
-            except PermissionError:
-                print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.")
-            except FileNotFoundError:
-                print("Error: Source file was not found!")
-            except:
-                print("Error: Source file matches destination!")
+                    shutil.rmtree(pasteread) #but we remove the source directory at the end!
+                    print("Deleted cut directory at: "+pasteread+"!")
+                    read(reader) #refresh!
+                except FileExistsError: #SAME ERROR HANDLING FINGERS HURT
+                    print("ErrorD: Cannot paste to a directory with the same file!")
+                except PermissionError:
+                    print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.")
+                except FileNotFoundError:
+                    print("Error: Source file was not found!")
 
-        root.clipboard_clear()
-        root.clipboard_append(clipstore) #and finally return the user's clipboard.
-        print("recopied: "+clipstore)
-        root.update() #update tkinter.
-    else: #if none of the special characters was found, do nothing
-        print("No pastefiles/directories found!")
+            elif pasteread == "":
+                print("Error: Paste is NULL! Ignoring...") #also check if special characters was found but no path was found for the source
+            else: #same thing as before except for file and not directory. explanations of the code are in the copy side.
+                try:
+                    if search(reader, (pasteread.split("/"))[-1]):
+                        raise FileExistsError
+                    else:
+                        shutil.copy2(pasteread, endpath) #copy2 is a special copy that tries to also copy any special arguments in the source file.
+                        print("Pasting: "+pasteread+" to "+reader+"!")
+                        os.remove(pasteread) #not a directory so use file-specific remove.
+                        print("Deleted cut file at: "+pasteread+"!")
+                    read(reader)
+                except FileExistsError: #error handling, fingers hurt
+                    print("ErrorF: Cannot paste to a directory with the same file!")
+                except PermissionError:
+                    print("Error: Permission denied. Maybe try running pydex with sudo/administration permissions for this.")
+                except FileNotFoundError:
+                    print("Error: Source file was not found!")
+                except:
+                    print("Error: Source file matches destination!")
+
+            root.clipboard_clear()
+            root.clipboard_append(clipstore) #and finally return the user's clipboard.
+            print("recopied: "+clipstore)
+            root.update() #update tkinter.
+        else: #if none of the special characters was found, do nothing
+            print("No pastefiles/directories found!")
+    except TclError:
+        print("Clipboard not found or nothing stored!")
+        
+    
 
 def proccopyto(): #path specific copypaste function with a window.
     copyingfile = filecompile
